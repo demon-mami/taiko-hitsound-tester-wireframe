@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>osu!taiko Hitsound Tester</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <h1>osu!taiko Hitsound Tester</h1>
+
+      <section class="set-area" aria-label="Hitsound sets">
+        <article class="set-card is-active" data-set-card="1">
+          <button class="set-selector" type="button" aria-pressed="true" data-set="1">
+            SET 01
+          </button>
+          <div class="sound-slots">
+            <div class="sound-slot">
+              <input
+                class="file-input"
+                id="set-1-don"
+                type="file"
+                accept="audio/*"
+                aria-label="SET 01 Don audio file, unloaded"
+                data-set="1"
+                data-sound="Don"
+              />
+              <label class="sound-trigger" for="set-1-don">Don</label>
+            </div>
+            <div class="sound-slot">
+              <input
+                class="file-input"
+                id="set-1-ka"
+                type="file"
+                accept="audio/*"
+                aria-label="SET 01 Ka audio file, unloaded"
+                data-set="1"
+                data-sound="Ka"
+              />
+              <label class="sound-trigger" for="set-1-ka">Ka</label>
+            </div>
+          </div>
+        </article>
+
+        <article class="set-card" data-set-card="2">
+          <button class="set-selector" type="button" aria-pressed="false" data-set="2">
+            SET 02
+          </button>
+          <div class="sound-slots">
+            <div class="sound-slot">
+              <input
+                class="file-input"
+                id="set-2-don"
+                type="file"
+                accept="audio/*"
+                aria-label="SET 02 Don audio file, unloaded"
+                data-set="2"
+                data-sound="Don"
+              />
+              <label class="sound-trigger" for="set-2-don">Don</label>
+            </div>
+            <div class="sound-slot">
+              <input
+                class="file-input"
+                id="set-2-ka"
+                type="file"
+                accept="audio/*"
+                aria-label="SET 02 Ka audio file, unloaded"
+                data-set="2"
+                data-sound="Ka"
+              />
+              <label class="sound-trigger" for="set-2-ka">Ka</label>
+            </div>
+          </div>
+        </article>
+
+        <article class="set-card" data-set-card="3">
+          <button class="set-selector" type="button" aria-pressed="false" data-set="3">
+            SET 03
+          </button>
+          <div class="sound-slots">
+            <div class="sound-slot">
+              <input
+                class="file-input"
+                id="set-3-don"
+                type="file"
+                accept="audio/*"
+                aria-label="SET 03 Don audio file, unloaded"
+                data-set="3"
+                data-sound="Don"
+              />
+              <label class="sound-trigger" for="set-3-don">Don</label>
+            </div>
+            <div class="sound-slot">
+              <input
+                class="file-input"
+                id="set-3-ka"
+                type="file"
+                accept="audio/*"
+                aria-label="SET 03 Ka audio file, unloaded"
+                data-set="3"
+                data-sound="Ka"
+              />
+              <label class="sound-trigger" for="set-3-ka">Ka</label>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="song-area" aria-label="Test songs">
+        <button class="song-button is-active" type="button" aria-pressed="true" data-song="1">
+          <span class="song-name">Lovesickore - Forever 1.3x</span>
+          <span class="song-purpose">over 290bpm stream</span>
+        </button>
+        <button class="song-button" type="button" aria-pressed="false" data-song="2">
+          <span class="song-name">El'na dia</span>
+          <span class="song-purpose">over 250bpm stream</span>
+        </button>
+        <button class="song-button" type="button" aria-pressed="false" data-song="3">
+          <span class="song-name">Prismatix - Promise</span>
+          <span class="song-purpose">200bpm stream</span>
+        </button>
+        <button class="song-button" type="button" aria-pressed="false" data-song="4">
+          <span class="song-name">少女レイ - Hell Oni</span>
+          <span class="song-purpose">倍取り</span>
+        </button>
+        <button class="song-button" type="button" aria-pressed="false" data-song="5">
+          <span class="song-name">意識高い系ヤンデレドM少女J</span>
+          <span class="song-purpose">1/6 , 1/8</span>
+        </button>
+      </section>
+
+      <section class="playback-area" aria-label="Playback check">
+        <div class="disc-panel">
+          <div class="disc" role="img" aria-label="CD placeholder for song 1">
+            <span class="disc-hole" aria-hidden="true"></span>
+            <span class="disc-label">CD 01</span>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="waveform-panel">
+            <svg
+              class="waveform"
+              viewBox="0 0 640 250"
+              role="img"
+              aria-labelledby="waveform-title waveform-description"
+              preserveAspectRatio="none"
+            >
+              <title id="waveform-title">Don and Ka waveform placeholders</title>
+              <desc id="waveform-description">
+                Two non-editable placeholder waveform lines on the same zero to three thousand millisecond axis.
+              </desc>
+              <line class="wave-axis" x1="34" y1="214" x2="620" y2="214" />
+              <line class="wave-axis" x1="34" y1="26" x2="34" y2="214" />
+              <polyline
+                class="wave-line wave-line-don"
+                points="34,126 52,124 68,114 84,145 100,82 116,166 132,70 148,178 164,96 180,137 196,118 212,125 228,89 244,159 260,74 276,176 292,102 308,139 324,121 340,127 356,93 372,154 388,81 404,166 420,105 436,138 452,117 468,127 484,99 500,148 516,91 532,157 548,111 564,134 580,120 598,126 620,125"
+              />
+              <polyline
+                class="wave-line wave-line-ka"
+                points="34,132 52,136 68,146 84,112 100,167 116,93 132,181 148,78 164,153 180,119 196,139 212,130 228,162 244,98 260,176 276,84 292,148 308,112 324,135 340,128 356,158 372,102 388,171 404,91 420,145 436,115 452,136 468,126 484,153 500,106 516,164 532,101 548,142 564,118 580,133 598,129 620,130"
+              />
+              <text class="wave-label" x="44" y="46">Don</text>
+              <text class="wave-label wave-label-ka" x="96" y="46">Ka</text>
+              <text class="axis-label" x="34" y="238">0 ms</text>
+              <text class="axis-label axis-label-end" x="620" y="238">3000 ms</text>
+            </svg>
+          </div>
+
+          <div class="player is-paused" data-player-state="paused">
+            <button
+              class="play-button"
+              type="button"
+              aria-label="Play"
+              aria-pressed="false"
+            >
+              <span class="play-icon" aria-hidden="true">▶</span>
+            </button>
+            <input
+              class="seek-input"
+              type="range"
+              min="0"
+              max="30"
+              step="0.1"
+              value="0"
+              aria-label="Playback position"
+              aria-valuetext="00:00 of 00:30"
+            />
+            <div class="time-row" aria-live="off">
+              <time class="current-time" datetime="PT0S">00:00</time>
+              <time class="total-time" datetime="PT30S">00:30</time>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
