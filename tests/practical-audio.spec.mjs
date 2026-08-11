@@ -61,7 +61,7 @@ async function setEffectVolume(page, value) {
     input.value = String(next);
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }, value);
-  await expect(page.locator("#effect-volume-output")).toHaveValue(`${value}%`);
+  await expect(page.locator("#effect-volume-output")).toHaveText(`${value}%`);
   await page.waitForTimeout(35);
 }
 
