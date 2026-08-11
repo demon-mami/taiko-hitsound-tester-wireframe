@@ -176,7 +176,7 @@ function renderSongs() {
 
 async function selectSong(songId) {
   const song = catalog.songs.find((entry) => entry.id === songId);
-  if (!song || activeSongId === songId) return;
+  if (!song || (activeSongId === songId && engine.musicBuffer)) return;
   const token = ++loadingSongToken;
   activeSongId = songId;
   [...document.querySelectorAll(".song-button")].forEach((button) => {
@@ -191,8 +191,8 @@ async function selectSong(songId) {
   disc.style.backgroundImage = `linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.18)), url("${ASSET_ROOT}${song.background}")`;
   disc.setAttribute("aria-label", `${song.display_name} artwork`);
   try {
-    await engine.loadSong({ musicUrl: `${ASSET_ROOT}${song.music}`, chartUrl: `${ASSET_ROOT}${song.chart}` });
-    if (token !== loadingSongToken) return;
+    const result = await engine.loadSong({ musicUrl: `${ASSET_ROOT}${song.music}`, chartUrl: `${ASSET_ROOT}${song.chart}` });
+    if (token !== loadingSongToken || result?.stale) return;
     updatePlayAvailability();
   } catch (error) {
     console.error(error);
