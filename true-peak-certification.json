@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "analyzer_version": "tp8-wasm-1.0.0",
+  "status": "project-certified",
+  "ceiling_dbTP": -1.0,
+  "certified_underread_margin_db": 0.25,
+  "oversample_factor": 8,
+  "filter": {
+    "taps_per_phase": 48,
+    "wasm_sha256": "a313484861d99bb43bf0584e2237b625743e6600cbc00b18e700edaab303bed1"
+  },
+  "validation": {
+    "max_observed_underread_db": 0.122593,
+    "release_reserve_db": 0.127407,
+    "formal_ebu_mode_certification_claimed": false
+  }
+}
