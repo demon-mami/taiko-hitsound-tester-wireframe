@@ -34,6 +34,15 @@ const engine = new HitsoundTesterEngine({
   onTime: updateTimeline,
   onEnded: () => updatePlayerState(false),
   onStatus: (message) => { statusElement.textContent = message; },
+  onSafety: (result) => {
+    if (!result) {
+      player.removeAttribute("data-safety-ready");
+      player.removeAttribute("data-master-gain-db");
+      return;
+    }
+    player.dataset.safetyReady = "true";
+    player.dataset.masterGainDb = result.fixedSafeGainDb.toFixed(3);
+  },
 });
 
 function formatTime(seconds) {
@@ -65,12 +74,22 @@ function updatePlayerState(playing = engine.playing) {
 }
 
 function updatePlayAvailability() {
-  const ready = Boolean(engine.musicBuffer && engine.chart && engine.hasRequiredHitsounds(activeSet));
+  const ready = engine.isPlaybackReady(activeSet);
   playButton.disabled = !ready;
   seekInput.disabled = !engine.musicBuffer;
-  if (!engine.musicBuffer) statusElement.textContent = "曲assetを読み込んでいます…";
-  else if (!engine.hasRequiredHitsounds(activeSet)) statusElement.textContent = "選択SETのDon / Katを読み込んでください。";
-  else statusElement.textContent = "再生できます。";
+
+  if (!engine.musicBuffer) {
+    statusElement.textContent = "曲assetを読み込んでいます…";
+  } else if (!engine.hasRequiredHitsounds(activeSet)) {
+    statusElement.textContent = "選択SETのDon / Katを読み込んでください。";
+  } else if (!engine.safetyReady) {
+    statusElement.textContent = "True Peak安全Gainを計算しています…";
+  } else if (engine.safetyResult) {
+    statusElement.textContent =
+      `再生できます。Master ${engine.safetyResult.fixedSafeGainDb.toFixed(2)} dB`;
+  } else {
+    statusElement.textContent = "再生準備中です…";
+  }
 }
 
 function buildSetCards() {
@@ -110,6 +129,7 @@ function buildSetCards() {
         const file = input.files?.[0] || null;
         try {
           label.classList.add("is-loading");
+          playButton.disabled = true;
           await engine.setHitsound(setIndex, def.key, file);
           label.classList.toggle("is-loaded", Boolean(file));
           input.setAttribute("aria-label", `SET ${setIndex + 1} ${def.label} audio file, ${file ? "loaded" : "unloaded"}`);
