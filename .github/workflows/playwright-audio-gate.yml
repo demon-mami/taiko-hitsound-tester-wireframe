@@ -1,0 +1,40 @@
+name: Playwright Audio Gate
+
+on:
+  push:
+    branches:
+      - main
+      - "integration/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  practical-audio-gate:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install test dependency
+        run: npm install
+
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Run practical audio gate
+        run: npm run test:e2e
+        env:
+          CI: "true"
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-audio-report
+          path: playwright-report/
+          retention-days: 14
