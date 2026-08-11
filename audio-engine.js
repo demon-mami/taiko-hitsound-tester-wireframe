@@ -44,9 +44,10 @@ export class HitsoundTesterEngine {
     this.onTime = onTime || (() => {});
     this.onEnded = onEnded || (() => {});
     this.onStatus = onStatus || (() => {});
+    this.songLoadGeneration = 0;
   }
 
-  async ensureContext() {
+  async ensureContext({ resume = false } = {}) {
     if (!this.context) {
       const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextCtor) throw new Error("Web Audio API is not supported in this browser.");
@@ -58,7 +59,7 @@ export class HitsoundTesterEngine {
       this.effectGain.connect(this.masterGain);
       this.masterGain.connect(this.context.destination);
     }
-    if (this.context.state === "suspended") await this.context.resume();
+    if (resume && this.context.state === "suspended") await this.context.resume();
     return this.context;
   }
 
@@ -72,19 +73,22 @@ export class HitsoundTesterEngine {
   }
 
   async loadSong({ musicUrl, chartUrl }) {
+    const generation = ++this.songLoadGeneration;
     this.stop(true);
     this.onStatus("曲assetを読み込んでいます…");
     const [musicRes, chartRes] = await Promise.all([fetch(musicUrl), fetch(chartUrl)]);
     if (!musicRes.ok) throw new Error(`music.ogg load failed: ${musicRes.status}`);
     if (!chartRes.ok) throw new Error(`chart.json load failed: ${chartRes.status}`);
-    const chart = await chartRes.json();
+    const [chart, musicBytes] = await Promise.all([chartRes.json(), musicRes.arrayBuffer()]);
     if (chart.schema_version !== 2) throw new Error(`Unsupported chart schema: ${chart.schema_version}`);
+    const musicBuffer = await this.decodeArrayBuffer(musicBytes);
+    if (generation !== this.songLoadGeneration) return { stale: true };
     this.chart = chart;
-    this.musicBuffer = await this.decodeArrayBuffer(await musicRes.arrayBuffer());
+    this.musicBuffer = musicBuffer;
     this.position = 0;
     this.onTime(0, this.musicBuffer.duration);
     this.onStatus("曲assetを読み込みました。");
-    return { duration: this.musicBuffer.duration, sampleRate: this.musicBuffer.sampleRate };
+    return { stale: false, duration: this.musicBuffer.duration, sampleRate: this.musicBuffer.sampleRate };
   }
 
   setActiveSet(index) {
@@ -173,7 +177,7 @@ export class HitsoundTesterEngine {
   async play() {
     if (!this.musicBuffer || !this.chart) throw new Error("Song is not loaded.");
     if (!this.hasRequiredHitsounds()) throw new Error("Active SET requires Don and Kat.");
-    const ctx = await this.ensureContext();
+    const ctx = await this.ensureContext({ resume: true });
     if (this.position >= this.musicBuffer.duration - 0.001) this.position = 0;
 
     const startAt = ctx.currentTime + 0.05;
