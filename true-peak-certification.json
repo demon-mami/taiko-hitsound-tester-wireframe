@@ -2,16 +2,47 @@
   "schema_version": 1,
   "analyzer_version": "tp8-wasm-1.0.0",
   "status": "project-certified",
+  "scope": {
+    "stable_gain_only": true,
+    "single_active_set": true,
+    "effect_gain_range": [
+      0.0,
+      1.0
+    ],
+    "certified_bandlimit_fraction_of_input_fs": 0.455,
+    "notes": "Project safety certification for stable-state fixedSafeGain. This is not a claim of formal EBU Mode product certification."
+  },
   "ceiling_dbTP": -1.0,
   "certified_underread_margin_db": 0.25,
   "oversample_factor": 8,
   "filter": {
+    "design": "linear interpolation FIR, Remez, DC-normalized",
+    "total_taps": 383,
     "taps_per_phase": 48,
+    "passband_edge_fraction_of_input_fs": 0.46,
+    "stopband_edge_fraction_of_input_fs": 0.54,
+    "coefficient_sha256_float64_phase_matrix": "d76fd63da1c9a887439bc6803d2e34b20b47bbb672a0c0550fcba7e342dc2f32",
     "wasm_sha256": "a313484861d99bb43bf0584e2237b625743e6600cbc00b18e700edaab303bed1"
   },
   "validation": {
     "max_observed_underread_db": 0.122593,
     "release_reserve_db": 0.127407,
+    "ebu_tech_3341_synthesized_tests_15_19": {
+      "15_dbTP": -6.027787,
+      "16_dbTP": -6.02893,
+      "17_dbTP": -6.024468,
+      "18_dbTP": -6.022548,
+      "19_dbTP": 2.976052
+    },
+    "frequency_phase_grid": {
+      "frequency_fraction_input_fs": "0.01..0.455, step 0.005",
+      "phase_degrees": "0..355, step 5",
+      "max_underread_db": 0.122593
+    },
+    "bandlimited_noise_and_multisine_vs_64x_reference_max_underread_db": 0.065891,
+    "perfect_v3_2_hitsounds_vs_64x_reference_max_underread_db": 0.043573,
+    "25_music_peak_neighborhoods_vs_64x_reference_max_underread_db": 0.036371,
+    "25_music_plus_perfect_v3_2_mix_peak_neighborhoods_vs_64x_reference_max_underread_db": 0.040064,
     "formal_ebu_mode_certification_claimed": false
   }
 }
