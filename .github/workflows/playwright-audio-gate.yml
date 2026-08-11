@@ -6,8 +6,6 @@ on:
       - main
       - "integration/**"
   pull_request:
-    branches:
-      - main
 
 jobs:
   practical-audio-gate:
