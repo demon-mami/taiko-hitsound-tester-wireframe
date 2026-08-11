@@ -1,173 +1,298 @@
-(() => {
-  "use strict";
+import { HitsoundTesterEngine } from "./audio-engine.js";
 
-  const DUMMY_DURATION_SECONDS = 30;
+const ASSET_ROOT = "./assets/";
+const DON_COLOR = "#EEB9B2";
+const KAT_COLOR = "#B0CCD7";
+const SLOT_DEFS = [
+  { key: "don", label: "Don", required: true },
+  { key: "big_don", label: "BigDon", required: false },
+  { key: "kat", label: "Kat", required: true },
+  { key: "big_kat", label: "BigKat", required: false },
+];
 
-  const setCards = [...document.querySelectorAll("[data-set-card]")];
-  const setSelectors = [...document.querySelectorAll(".set-selector")];
-  const fileInputs = [...document.querySelectorAll(".file-input")];
-  const songButtons = [...document.querySelectorAll(".song-button")];
-  const disc = document.querySelector(".disc");
-  const discLabel = document.querySelector(".disc-label");
-  const player = document.querySelector(".player");
-  const playButton = document.querySelector(".play-button");
-  const playIcon = document.querySelector(".play-icon");
-  const seekInput = document.querySelector(".seek-input");
-  const currentTimeElement = document.querySelector(".current-time");
+const setArea = document.querySelector("#set-area");
+const songArea = document.querySelector("#song-area");
+const disc = document.querySelector(".disc");
+const discLabel = document.querySelector(".disc-label");
+const waveform = document.querySelector(".waveform");
+const player = document.querySelector(".player");
+const playButton = document.querySelector(".play-button");
+const playIcon = document.querySelector(".play-icon");
+const seekInput = document.querySelector(".seek-input");
+const currentTimeElement = document.querySelector(".current-time");
+const totalTimeElement = document.querySelector(".total-time");
+const statusElement = document.querySelector(".player-status");
+const effectVolumeInput = document.querySelector("#effect-volume-input");
+const effectVolumeOutput = document.querySelector("#effect-volume-output");
 
-  let activeSet = 1;
-  let activeSong = 1;
-  let currentPosition = 0;
-  let isPlaying = false;
-  let animationFrame = null;
-  let previousFrameTime = 0;
+let catalog = null;
+let activeSongId = null;
+let activeSet = 0;
+let loadingSongToken = 0;
 
-  const formatTime = (seconds) => {
-    const wholeSeconds = Math.floor(Math.max(0, seconds));
-    const minutes = Math.floor(wholeSeconds / 60);
-    const remainingSeconds = wholeSeconds % 60;
+const engine = new HitsoundTesterEngine({
+  onTime: updateTimeline,
+  onEnded: () => updatePlayerState(false),
+  onStatus: (message) => { statusElement.textContent = message; },
+});
 
-    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
-  };
+function formatTime(seconds) {
+  const whole = Math.floor(Math.max(0, seconds));
+  const minutes = Math.floor(whole / 60);
+  const secs = whole % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
 
-  const updateTimeline = () => {
-    const formattedCurrent = formatTime(currentPosition);
-    const formattedTotal = formatTime(DUMMY_DURATION_SECONDS);
+function updateTimeline(current, duration) {
+  const d = Math.max(0, duration || 0);
+  const c = Math.min(Math.max(0, current || 0), d);
+  seekInput.max = String(d || 1);
+  seekInput.value = String(c);
+  currentTimeElement.textContent = formatTime(c);
+  totalTimeElement.textContent = formatTime(d);
+  currentTimeElement.dateTime = `PT${Math.floor(c)}S`;
+  totalTimeElement.dateTime = `PT${Math.floor(d)}S`;
+  seekInput.setAttribute("aria-valuetext", `${formatTime(c)} of ${formatTime(d)}`);
+}
 
-    seekInput.value = String(currentPosition);
-    seekInput.setAttribute("aria-valuetext", `${formattedCurrent} of ${formattedTotal}`);
-    currentTimeElement.textContent = formattedCurrent;
-    currentTimeElement.dateTime = `PT${Math.floor(currentPosition)}S`;
-  };
+function updatePlayerState(playing = engine.playing) {
+  player.classList.toggle("is-playing", playing);
+  player.classList.toggle("is-paused", !playing);
+  player.dataset.playerState = playing ? "playing" : "paused";
+  playButton.setAttribute("aria-pressed", String(playing));
+  playButton.setAttribute("aria-label", playing ? "Pause" : "Play");
+  playIcon.textContent = playing ? "⏸" : "▶";
+}
 
-  const updatePlayerState = () => {
-    player.classList.toggle("is-playing", isPlaying);
-    player.classList.toggle("is-paused", !isPlaying);
-    player.dataset.playerState = isPlaying ? "playing" : "paused";
-    playButton.setAttribute("aria-pressed", String(isPlaying));
-    playButton.setAttribute("aria-label", isPlaying ? "Pause" : "Play");
-    playIcon.textContent = isPlaying ? "⏸" : "▶";
-  };
+function updatePlayAvailability() {
+  const ready = Boolean(engine.musicBuffer && engine.chart && engine.hasRequiredHitsounds(activeSet));
+  playButton.disabled = !ready;
+  seekInput.disabled = !engine.musicBuffer;
+  if (!engine.musicBuffer) statusElement.textContent = "曲assetを読み込んでいます…";
+  else if (!engine.hasRequiredHitsounds(activeSet)) statusElement.textContent = "選択SETのDon / Katを読み込んでください。";
+  else statusElement.textContent = "再生できます。";
+}
 
-  const pause = () => {
-    isPlaying = false;
-    previousFrameTime = 0;
+function buildSetCards() {
+  setArea.textContent = "";
+  for (let setIndex = 0; setIndex < 3; setIndex += 1) {
+    const card = document.createElement("article");
+    card.className = `set-card${setIndex === 0 ? " is-active" : ""}`;
+    card.dataset.setCard = String(setIndex + 1);
 
-    if (animationFrame !== null) {
-      cancelAnimationFrame(animationFrame);
-      animationFrame = null;
+    const selector = document.createElement("button");
+    selector.className = "set-selector";
+    selector.type = "button";
+    selector.dataset.set = String(setIndex + 1);
+    selector.setAttribute("aria-pressed", String(setIndex === 0));
+    selector.textContent = `SET ${String(setIndex + 1).padStart(2, "0")}`;
+    selector.addEventListener("click", () => selectSet(setIndex));
+    card.append(selector);
+
+    const slots = document.createElement("div");
+    slots.className = "sound-slots";
+    for (const def of SLOT_DEFS) {
+      const slot = document.createElement("div");
+      slot.className = "sound-slot";
+      const input = document.createElement("input");
+      input.className = "file-input";
+      input.type = "file";
+      input.accept = "audio/*";
+      input.id = `set-${setIndex + 1}-${def.key}`;
+      input.dataset.set = String(setIndex + 1);
+      input.dataset.sound = def.key;
+      input.setAttribute("aria-label", `SET ${setIndex + 1} ${def.label} audio file, unloaded`);
+      const label = document.createElement("label");
+      label.className = `sound-trigger sound-${def.key.startsWith("kat") || def.key === "big_kat" ? "kat" : "don"}`;
+      label.htmlFor = input.id;
+      label.textContent = `${def.label}${def.required ? "" : " · optional"}`;
+      input.addEventListener("change", async () => {
+        const file = input.files?.[0] || null;
+        try {
+          label.classList.add("is-loading");
+          await engine.setHitsound(setIndex, def.key, file);
+          label.classList.toggle("is-loaded", Boolean(file));
+          input.setAttribute("aria-label", `SET ${setIndex + 1} ${def.label} audio file, ${file ? "loaded" : "unloaded"}`);
+          if (setIndex === activeSet) drawWaveforms();
+          updatePlayAvailability();
+        } catch (error) {
+          console.error(error);
+          label.classList.remove("is-loaded");
+          statusElement.textContent = `${def.label}の読み込みに失敗しました。`;
+        } finally {
+          label.classList.remove("is-loading");
+        }
+      });
+      slot.append(input, label);
+      slots.append(slot);
     }
+    card.append(slots);
+    setArea.append(card);
+  }
+}
 
-    updatePlayerState();
-  };
+function selectSet(index) {
+  if (index === activeSet) return;
+  activeSet = index;
+  engine.setActiveSet(index);
+  [...document.querySelectorAll(".set-card")].forEach((card, i) => card.classList.toggle("is-active", i === index));
+  [...document.querySelectorAll(".set-selector")].forEach((button, i) => button.setAttribute("aria-pressed", String(i === index)));
+  updatePlayerState(false);
+  drawWaveforms();
+  updatePlayAvailability();
+}
 
-  const resetPlayback = () => {
-    pause();
-    currentPosition = 0;
-    updateTimeline();
-  };
+async function loadCatalog() {
+  const response = await fetch(`${ASSET_ROOT}01_song_catalog.json`);
+  if (!response.ok) throw new Error(`Catalog load failed: ${response.status}`);
+  catalog = await response.json();
+  if (catalog.schema_version !== 2 || catalog.package_version !== "2.0") {
+    throw new Error(`Unexpected asset catalog version: schema=${catalog.schema_version}, package=${catalog.package_version}`);
+  }
+  renderSongs();
+  if (catalog.songs.length) await selectSong(catalog.songs[0].id);
+}
 
-  const advancePlayback = (frameTime) => {
-    if (!isPlaying) {
-      return;
+function renderSongs() {
+  songArea.textContent = "";
+  songArea.setAttribute("aria-busy", "false");
+  for (const song of catalog.songs) {
+    const button = document.createElement("button");
+    button.className = "song-button";
+    button.type = "button";
+    button.dataset.songId = song.id;
+    button.setAttribute("aria-pressed", "false");
+    const name = document.createElement("span");
+    name.className = "song-name";
+    name.textContent = song.display_name;
+    const purpose = document.createElement("span");
+    purpose.className = "song-purpose";
+    purpose.textContent = song.purpose;
+    button.append(name, purpose);
+    button.addEventListener("click", () => selectSong(song.id));
+    songArea.append(button);
+  }
+}
+
+async function selectSong(songId) {
+  const song = catalog.songs.find((entry) => entry.id === songId);
+  if (!song || activeSongId === songId) return;
+  const token = ++loadingSongToken;
+  activeSongId = songId;
+  [...document.querySelectorAll(".song-button")].forEach((button) => {
+    const active = button.dataset.songId === songId;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  updatePlayerState(false);
+  playButton.disabled = true;
+  seekInput.disabled = true;
+  discLabel.textContent = song.id.replace("song", "SONG ");
+  disc.style.backgroundImage = `linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.18)), url("${ASSET_ROOT}${song.background}")`;
+  disc.setAttribute("aria-label", `${song.display_name} artwork`);
+  try {
+    await engine.loadSong({ musicUrl: `${ASSET_ROOT}${song.music}`, chartUrl: `${ASSET_ROOT}${song.chart}` });
+    if (token !== loadingSongToken) return;
+    updatePlayAvailability();
+  } catch (error) {
+    console.error(error);
+    statusElement.textContent = `曲assetの読み込みに失敗しました: ${error.message}`;
+  }
+}
+
+function drawBuffer(ctx, buffer, color, width, height) {
+  if (!buffer) return;
+  const data = buffer.getChannelData(0);
+  const maxSamples = Math.min(data.length, Math.floor(buffer.sampleRate * 1.0));
+  if (maxSamples <= 1) return;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const mid = height / 2;
+  const step = Math.max(1, Math.floor(maxSamples / width));
+  for (let x = 0; x < width; x += 1) {
+    const start = Math.min(maxSamples - 1, x * step);
+    const end = Math.min(maxSamples, start + step);
+    let min = 1;
+    let max = -1;
+    for (let i = start; i < end; i += 1) {
+      const value = data[i];
+      if (value < min) min = value;
+      if (value > max) max = value;
     }
+    const y1 = mid - max * (height * 0.42);
+    const y2 = mid - min * (height * 0.42);
+    ctx.moveTo(x, y1);
+    ctx.lineTo(x, y2);
+  }
+  ctx.stroke();
+}
 
-    if (previousFrameTime === 0) {
-      previousFrameTime = frameTime;
+function drawWaveforms() {
+  const ctx = waveform.getContext("2d");
+  const { width, height } = waveform;
+  ctx.clearRect(0, 0, width, height);
+  ctx.strokeStyle = "rgba(0,0,0,.12)";
+  ctx.beginPath();
+  ctx.moveTo(0, height / 2);
+  ctx.lineTo(width, height / 2);
+  ctx.stroke();
+  const set = engine.sets[activeSet];
+  drawBuffer(ctx, set.don, DON_COLOR, width, height);
+  drawBuffer(ctx, set.kat, KAT_COLOR, width, height);
+  ctx.fillStyle = "rgba(0,0,0,.62)";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText("0 ms", 8, height - 8);
+  ctx.textAlign = "right";
+  ctx.fillText("1.0 s", width - 8, height - 8);
+  ctx.textAlign = "left";
+}
+
+playButton.addEventListener("click", async () => {
+  try {
+    if (engine.playing) {
+      engine.pause();
+      updatePlayerState(false);
     } else {
-      currentPosition += (frameTime - previousFrameTime) / 1000;
-      previousFrameTime = frameTime;
+      await engine.play();
+      updatePlayerState(true);
     }
+  } catch (error) {
+    console.error(error);
+    statusElement.textContent = error.message;
+    updatePlayerState(false);
+  }
+});
 
-    if (currentPosition >= DUMMY_DURATION_SECONDS) {
-      currentPosition = DUMMY_DURATION_SECONDS;
-      updateTimeline();
-      pause();
-      return;
-    }
+seekInput.addEventListener("input", async () => {
+  try {
+    await engine.seek(Number(seekInput.value));
+    updatePlayerState(engine.playing);
+  } catch (error) {
+    console.error(error);
+  }
+});
 
-    updateTimeline();
-    animationFrame = requestAnimationFrame(advancePlayback);
-  };
+effectVolumeInput.addEventListener("input", () => {
+  const value = Number(effectVolumeInput.value);
+  effectVolumeOutput.value = `${value}%`;
+  engine.setEffectVolume(value);
+});
 
-  const play = () => {
-    if (currentPosition >= DUMMY_DURATION_SECONDS) {
-      currentPosition = 0;
-      updateTimeline();
-    }
+effectVolumeInput.addEventListener("wheel", (event) => {
+  event.preventDefault();
+  const direction = event.deltaY < 0 ? 1 : -1;
+  const next = Math.min(100, Math.max(0, Number(effectVolumeInput.value) + direction * 5));
+  effectVolumeInput.value = String(next);
+  effectVolumeInput.dispatchEvent(new Event("input", { bubbles: true }));
+}, { passive: false });
 
-    isPlaying = true;
-    previousFrameTime = 0;
-    updatePlayerState();
-    animationFrame = requestAnimationFrame(advancePlayback);
-  };
-
-  setSelectors.forEach((button) => {
-    button.addEventListener("click", () => {
-      const nextSet = Number(button.dataset.set);
-
-      if (nextSet === activeSet) {
-        return;
-      }
-
-      activeSet = nextSet;
-      setCards.forEach((card) => {
-        card.classList.toggle("is-active", Number(card.dataset.setCard) === activeSet);
-      });
-      setSelectors.forEach((selector) => {
-        selector.setAttribute("aria-pressed", String(Number(selector.dataset.set) === activeSet));
-      });
-      resetPlayback();
-    });
-  });
-
-  fileInputs.forEach((input) => {
-    input.addEventListener("change", () => {
-      const isLoaded = Boolean(input.files && input.files.length > 0);
-      const trigger = document.querySelector(`label[for="${input.id}"]`);
-
-      trigger.classList.toggle("is-loaded", isLoaded);
-      input.setAttribute(
-        "aria-label",
-        `SET ${String(input.dataset.set).padStart(2, "0")} ${input.dataset.sound} audio file, ${isLoaded ? "loaded" : "unloaded"}`,
-      );
-    });
-  });
-
-  songButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const nextSong = Number(button.dataset.song);
-
-      if (nextSong === activeSong) {
-        return;
-      }
-
-      activeSong = nextSong;
-      songButtons.forEach((songButton) => {
-        const isActive = Number(songButton.dataset.song) === activeSong;
-        songButton.classList.toggle("is-active", isActive);
-        songButton.setAttribute("aria-pressed", String(isActive));
-      });
-      discLabel.textContent = `CD ${String(activeSong).padStart(2, "0")}`;
-      disc.setAttribute("aria-label", `CD placeholder for song ${activeSong}`);
-      resetPlayback();
-    });
-  });
-
-  playButton.addEventListener("click", () => {
-    if (isPlaying) {
-      pause();
-    } else {
-      play();
-    }
-  });
-
-  seekInput.addEventListener("input", () => {
-    currentPosition = Number(seekInput.value);
-    previousFrameTime = isPlaying ? performance.now() : 0;
-    updateTimeline();
-  });
-
-  updateTimeline();
-  updatePlayerState();
-})();
+buildSetCards();
+drawWaveforms();
+engine.setEffectVolume(80);
+loadCatalog().catch((error) => {
+  console.error(error);
+  songArea.setAttribute("aria-busy", "false");
+  songArea.innerHTML = `<p class="error-note">曲asset catalogを読み込めませんでした。</p>`;
+  statusElement.textContent = error.message;
+});
