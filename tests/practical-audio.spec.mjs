@@ -47,12 +47,10 @@ async function setFileFromUrl(page, selector, url, filename) {
 }
 
 async function loadRequiredSounds(page) {
-  for (let set = 1; set <= 3; set += 1) {
-    await setFileFromUrl(page, `#set-${set}-don`, "/fixtures/don.wav", `set${set}-don.wav`);
-    await waitForSafety(page);
-    await setFileFromUrl(page, `#set-${set}-kat`, "/fixtures/kat.wav", `set${set}-kat.wav`);
-    await waitForSafety(page);
-  }
+  await setFileFromUrl(page, "#set-1-don", "/fixtures/don.wav", "my-normal.wav");
+  await waitForSafety(page);
+  await setFileFromUrl(page, "#set-1-kat", "/fixtures/kat.wav", "my-clap.wav");
+  await waitForSafety(page);
   await expect(page.locator(".play-button")).toBeEnabled();
 }
 
@@ -72,7 +70,7 @@ async function setSeek(page, seconds) {
   }, seconds);
 }
 
-test("practical audio gate: five required interaction families", async ({ page }) => {
+test("practical audio gate: confirmed desktop source model", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-song-id="song01"]')).toBeVisible();
   await waitForSafety(page);
@@ -90,15 +88,17 @@ test("practical audio gate: five required interaction families", async ({ page }
     expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(false);
   });
 
-  await test.step("2. SET switching keeps common Master and does not invalidate safety", async () => {
+  await test.step("2. My Sound is active and unresolved presets remain inert", async () => {
     const master = await masterDb(page);
     await resetSafetyLog(page);
-    for (const name of ["SET 02", "SET 03", "SET 01"]) {
-      await page.getByRole("button", { name }).click();
-      await expect(page.locator(".player")).toHaveAttribute("data-safety-ready", "true");
-      expect(await masterDb(page)).toBe(master);
+
+    await expect(page.locator('[data-source="my-sound"]')).toHaveAttribute("aria-checked", "true");
+    for (const preset of ["preset-a", "preset-b", "preset-c"]) {
+      await expect(page.locator(`[data-source="${preset}"]`)).toBeDisabled();
+      await expect(page.locator(`[data-source="${preset}"]`)).toHaveAttribute("data-source-state", "unconfigured");
     }
-    await expect(page.locator('[data-set-card="1"]')).toHaveClass(/is-active/);
+
+    expect(await masterDb(page)).toBe(master);
     expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(false);
   });
 
@@ -137,7 +137,7 @@ test("practical audio gate: five required interaction families", async ({ page }
 
   await test.step("5. Hitsound/song changes invalidate then rebuild safety", async () => {
     await resetSafetyLog(page);
-    await setFileFromUrl(page, "#set-1-don", "/fixtures/loud-don.wav", "loud-don.wav");
+    await setFileFromUrl(page, "#set-1-don", "/fixtures/loud-don.wav", "loud-normal.wav");
     await expect(page.locator(".play-button")).toBeDisabled();
     await waitForSafety(page);
     await expect(page.locator(".play-button")).toBeEnabled();
