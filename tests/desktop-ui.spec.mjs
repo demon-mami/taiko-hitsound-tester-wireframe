@@ -40,7 +40,8 @@ test("desktop geometry and confirmed source states", async ({ page }) => {
   expect(geometry.transport.y - (geometry.stage.y + geometry.stage.height)).toBe(10);
 
   await expect(page.locator('[data-source="my-sound"]')).toHaveAttribute("aria-checked", "true");
-  await expect(page.locator('[data-source="preset-a"]')).toBeDisabled();
+  await expect(page.locator('[data-source="preset-a"]')).toBeEnabled();
+  await expect(page.locator('[data-source="preset-a"]')).toHaveAttribute("data-source-state", "ready");
   await expect(page.locator('[data-source="preset-b"]')).toBeDisabled();
   await expect(page.locator('[data-source="preset-c"]')).toBeDisabled();
 

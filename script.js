@@ -1,8 +1,7 @@
 import { HitsoundTesterEngine } from "./audio-engine.js";
 
 const ASSET_ROOT = "./assets/";
-const DON_COLOR = "#EB452C";
-const KAT_COLOR = "#448DAB";
+const PRESET_ROOT = "./presets/";
 const DON_RGB = [235, 69, 44];
 const KAT_RGB = [68, 141, 171];
 
@@ -28,15 +27,29 @@ const OVERVIEW_HEIGHT = 84;
 const FILE_LABEL_LIMIT = "taiko-normal-hitwhistle.wav".length;
 
 const SLOT_DEFS = [
-  { key: "don", role: "Normal", required: true, family: "don", primary: true },
-  { key: "big_don", role: "finish", required: false, family: "don", primary: false },
-  { key: "kat", role: "Clap", required: true, family: "kat", primary: true },
-  { key: "big_kat", role: "whistle", required: false, family: "kat", primary: false },
+  { key: "don", role: "Normal", family: "don", primary: true },
+  { key: "big_don", role: "finish", family: "don", primary: false },
+  { key: "kat", role: "Clap", family: "kat", primary: true },
+  { key: "big_kat", role: "whistle", family: "kat", primary: false },
 ];
 
-// Source of truth currently contains no audio assignment for these presets.
-// They intentionally remain unavailable rather than being inferred.
-const PRESET_CONFIG = Object.freeze({});
+// UI source -> frozen three-container audio backend.
+// My Sound + Preset A currently fit in the existing common-master model.
+// Preset B/C remain unresolved until their files/config are supplied.
+const SOURCE_CONFIG = Object.freeze({
+  "my-sound": { label: "My Sound", setIndex: 0, kind: "user" },
+  "preset-a": {
+    label: "Preset A",
+    setIndex: 1,
+    kind: "preset",
+    files: Object.freeze({
+      don: "PresetA-hitnormal.wav",
+      big_don: "PresetA-hitfinish.wav",
+      kat: "PresetA-hitclap.wav",
+      big_kat: "PresetA-hitwhistle.wav",
+    }),
+  },
+});
 
 const sourceSelector = document.querySelector("#source-selector");
 const soundSlotGrid = document.querySelector("#my-sound-slots");
@@ -66,6 +79,9 @@ let playbackDurationMs = 0;
 let playbackCurrentMs = 0;
 let overviewPreviewMs = null;
 let overviewDrag = null;
+
+const slotRefs = new Map();
+const mySoundFileNames = new Map();
 
 const timelineCtx = prepareCanvas(timelineCanvas, TIMELINE_WIDTH, TIMELINE_HEIGHT);
 const overviewStaticCtx = prepareCanvas(overviewStaticCanvas, OVERVIEW_WIDTH, OVERVIEW_HEIGHT);
@@ -106,9 +122,7 @@ function formatTime(seconds, tenths = false) {
   const safe = Math.max(0, Number(seconds) || 0);
   const minutes = Math.floor(safe / 60);
   const remaining = safe - minutes * 60;
-  if (tenths) {
-    return `${minutes}:${remaining.toFixed(1).padStart(4, "0")}`;
-  }
+  if (tenths) return `${minutes}:${remaining.toFixed(1).padStart(4, "0")}`;
   return `${minutes}:${String(Math.floor(remaining)).padStart(2, "0")}`;
 }
 
@@ -138,6 +152,7 @@ function rgba(rgb, alpha) {
 
 function buildSoundSlots() {
   soundSlotGrid.textContent = "";
+  slotRefs.clear();
 
   for (const def of SLOT_DEFS) {
     const slot = document.createElement("div");
@@ -162,29 +177,36 @@ function buildSoundSlots() {
 
     const copy = document.createElement("span");
     copy.className = "sound-copy";
+
     const role = document.createElement("span");
     role.className = "sound-role";
     role.textContent = def.role;
+
     const filename = document.createElement("span");
     filename.className = "sound-filename";
     filename.textContent = "Select file";
+
     copy.append(role, filename);
     trigger.append(icon, copy);
+    slot.append(input, trigger);
+    soundSlotGrid.append(slot);
+    slotRefs.set(def.key, { def, input, trigger, filename });
 
     input.addEventListener("click", () => {
+      if (activeSource !== "my-sound") return;
       input.value = "";
     });
 
     input.addEventListener("change", async () => {
+      if (activeSource !== "my-sound") return;
       const file = input.files?.[0] || null;
       try {
         trigger.classList.add("is-loading");
         playButton.disabled = true;
         await engine.setHitsound(0, def.key, file);
-        trigger.classList.toggle("is-loaded", Boolean(file));
-        filename.textContent = file ? truncateFilename(file.name) : "Select file";
-        filename.title = file?.name || "";
-        input.setAttribute("aria-label", `${def.role} audio file, ${file ? `loaded: ${file.name}` : "unloaded"}`);
+        if (file) mySoundFileNames.set(def.key, file.name);
+        else mySoundFileNames.delete(def.key);
+        renderSourceSlots();
         updatePlayAvailability();
       } catch (error) {
         console.error(error);
@@ -195,39 +217,133 @@ function buildSoundSlots() {
         trigger.classList.remove("is-loading");
       }
     });
+  }
 
-    slot.append(input, trigger);
-    soundSlotGrid.append(slot);
+  renderSourceSlots();
+}
+
+function renderSourceSlots() {
+  const config = SOURCE_CONFIG[activeSource];
+  const presetFiles = config?.kind === "preset" ? config.files : null;
+
+  for (const def of SLOT_DEFS) {
+    const ref = slotRefs.get(def.key);
+    if (!ref) continue;
+    const { input, trigger, filename } = ref;
+
+    if (presetFiles) {
+      const presetFilename = presetFiles[def.key];
+      input.disabled = true;
+      trigger.classList.add("is-preset", "is-loaded");
+      trigger.style.cursor = "default";
+      filename.textContent = truncateFilename(presetFilename);
+      filename.title = presetFilename;
+      input.setAttribute("aria-label", `${config.label} ${def.role}: ${presetFilename}`);
+    } else {
+      const userFilename = mySoundFileNames.get(def.key) || "";
+      input.disabled = false;
+      trigger.classList.remove("is-preset");
+      trigger.classList.toggle("is-loaded", Boolean(engine.sets[0][def.key]));
+      trigger.style.cursor = "";
+      filename.textContent = userFilename ? truncateFilename(userFilename) : "Select file";
+      filename.title = userFilename;
+      input.setAttribute("aria-label", `${def.role} audio file, ${userFilename ? `loaded: ${userFilename}` : "unloaded"}`);
+    }
   }
 }
 
 function initializeSourceSelector() {
-  const buttons = [...sourceSelector.querySelectorAll(".source-button")];
-  for (const button of buttons) {
+  for (const button of sourceSelector.querySelectorAll(".source-button")) {
     const source = button.dataset.source;
-    if (source === "my-sound") {
-      button.addEventListener("click", () => selectSource("my-sound"));
+    const config = SOURCE_CONFIG[source];
+
+    if (!config) {
+      button.disabled = true;
+      button.setAttribute("aria-disabled", "true");
+      button.dataset.sourceState = "unconfigured";
       continue;
     }
 
-    const configured = Boolean(PRESET_CONFIG[source]);
-    button.disabled = !configured;
-    button.setAttribute("aria-disabled", String(!configured));
-    button.dataset.sourceState = configured ? "configured" : "unconfigured";
+    if (config.kind === "preset") {
+      button.disabled = true;
+      button.setAttribute("aria-disabled", "true");
+      button.dataset.sourceState = "loading";
+      button.title = `${config.label} を準備しています。`;
+    } else {
+      button.disabled = false;
+      button.setAttribute("aria-disabled", "false");
+      button.dataset.sourceState = "ready";
+      button.title = "";
+    }
+
+    button.addEventListener("click", () => selectSource(source));
   }
+
   selectSource("my-sound");
 }
 
+function markPresetReady(source) {
+  const config = SOURCE_CONFIG[source];
+  const button = sourceSelector.querySelector(`[data-source="${source}"]`);
+  if (!button || !config) return;
+  button.disabled = false;
+  button.setAttribute("aria-disabled", "false");
+  button.dataset.sourceState = "ready";
+  button.title = "";
+}
+
+function markPresetFailed(source, error) {
+  const config = SOURCE_CONFIG[source];
+  const button = sourceSelector.querySelector(`[data-source="${source}"]`);
+  if (!button || !config) return;
+  button.disabled = true;
+  button.setAttribute("aria-disabled", "true");
+  button.dataset.sourceState = "error";
+  button.title = `${config.label} の読み込みに失敗しました。`;
+  console.error(error);
+}
+
 function selectSource(source) {
-  if (source !== "my-sound") return;
+  const config = SOURCE_CONFIG[source];
+  const button = sourceSelector.querySelector(`[data-source="${source}"]`);
+  if (!config || !button || button.disabled) return;
+  if (source === activeSource) return;
+
   activeSource = source;
+  engine.setActiveSet(config.setIndex);
   player.dataset.activeSource = source;
-  [...sourceSelector.querySelectorAll(".source-button")].forEach((button) => {
-    const selected = button.dataset.source === source;
-    button.classList.toggle("is-active", selected);
-    button.setAttribute("aria-checked", String(selected));
-  });
+
+  for (const item of sourceSelector.querySelectorAll(".source-button")) {
+    const selected = item.dataset.source === source;
+    item.classList.toggle("is-active", selected);
+    item.setAttribute("aria-checked", String(selected));
+  }
+
+  renderSourceSlots();
+  updatePlayerState(false);
   updatePlayAvailability();
+}
+
+async function preloadConfiguredPresets() {
+  for (const [source, config] of Object.entries(SOURCE_CONFIG)) {
+    if (config.kind !== "preset") continue;
+
+    try {
+      const entries = await Promise.all(SLOT_DEFS.map(async ({ key }) => {
+        const filename = config.files[key];
+        const response = await fetch(`${PRESET_ROOT}${filename}`);
+        if (!response.ok) throw new Error(`${filename} load failed: ${response.status}`);
+        const bytes = await response.arrayBuffer();
+        const buffer = await engine.decodeArrayBuffer(bytes);
+        return [key, buffer];
+      }));
+
+      engine.sets[config.setIndex] = Object.fromEntries(entries);
+      markPresetReady(source);
+    } catch (error) {
+      markPresetFailed(source, error);
+    }
+  }
 }
 
 async function loadCatalog() {
@@ -255,14 +371,7 @@ async function hydrateSongMetadata(song) {
     const credit = artist && mapper ? `${artist} - ${mapper}` : (artist || mapper || song.purpose || "—");
     return { ...song, title, artist, mapper, credit, sourceInfo };
   } catch {
-    return {
-      ...song,
-      title: song.display_name,
-      artist: "",
-      mapper: "",
-      credit: song.purpose || "—",
-      sourceInfo: null,
-    };
+    return { ...song, title: song.display_name, artist: "", mapper: "", credit: song.purpose || "—", sourceInfo: null };
   }
 }
 
@@ -295,22 +404,21 @@ function renderSongs() {
 }
 
 function updateSongSelection(songId) {
-  [...songArea.querySelectorAll(".song-button")].forEach((button) => {
+  for (const button of songArea.querySelectorAll(".song-button")) {
     const active = button.dataset.songId === songId;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
-  });
+  }
 }
 
 function updateStageBackground(song, token) {
   stageBackground.classList.remove("is-ready");
   stageBackground.style.top = `${Number(song.background_offset_y ?? 14)}px`;
-  const src = `${ASSET_ROOT}${song.background}`;
   stageBackground.onload = () => {
     if (token !== stageImageToken) return;
     stageBackground.classList.add("is-ready");
   };
-  stageBackground.src = src;
+  stageBackground.src = `${ASSET_ROOT}${song.background}`;
 }
 
 async function selectSong(songId) {
@@ -328,10 +436,7 @@ async function selectSong(songId) {
   statusElement.textContent = "曲assetを読み込んでいます…";
 
   try {
-    const result = await engine.loadSong({
-      musicUrl: `${ASSET_ROOT}${song.music}`,
-      chartUrl: `${ASSET_ROOT}${song.chart}`,
-    });
+    const result = await engine.loadSong({ musicUrl: `${ASSET_ROOT}${song.music}`, chartUrl: `${ASSET_ROOT}${song.chart}` });
     if (token !== loadingSongToken || result?.stale) return;
 
     timelineChart = engine.chart;
@@ -366,7 +471,7 @@ function updatePlaybackView(currentSeconds, durationSeconds) {
   totalTimeElement.dateTime = `PT${Math.floor(duration)}S`;
   seekInput.setAttribute("aria-valuetext", `${formatTime(current)} of ${formatTime(duration)}`);
 
-  overview.setAttribute("aria-valuemax", String(Math.max(0, Math.round(duration * 1000))));
+  overview.setAttribute("aria-valuemax", String(Math.round(duration * 1000)));
   overview.setAttribute("aria-valuenow", String(Math.round(current * 1000)));
   overview.setAttribute("aria-valuetext", `${formatTime(current)} of ${formatTime(duration)}`);
 
@@ -383,21 +488,17 @@ function updatePlayerState(playing = engine.playing) {
 }
 
 function updatePlayAvailability() {
-  const ready = activeSource === "my-sound" && engine.isPlaybackReady(0);
+  const config = SOURCE_CONFIG[activeSource];
+  const setIndex = config?.setIndex ?? 0;
+  const ready = engine.isPlaybackReady(setIndex);
   playButton.disabled = !ready;
   seekInput.disabled = !engine.musicBuffer;
 
-  if (!engine.musicBuffer) {
-    statusElement.textContent = "曲assetを読み込んでいます…";
-  } else if (!engine.hasRequiredHitsounds(0)) {
-    statusElement.textContent = "Normal / Clapを読み込んでください。";
-  } else if (!engine.safetyReady) {
-    statusElement.textContent = "True Peak安全Gainを計算しています…";
-  } else if (engine.safetyResult) {
-    statusElement.textContent = `再生できます。Master ${engine.safetyResult.fixedSafeGainDb.toFixed(2)} dB`;
-  } else {
-    statusElement.textContent = "再生準備中です…";
-  }
+  if (!engine.musicBuffer) statusElement.textContent = "曲assetを読み込んでいます…";
+  else if (!engine.hasRequiredHitsounds(setIndex)) statusElement.textContent = activeSource === "my-sound" ? "Normal / Clapを読み込んでください。" : `${config.label}を準備できませんでした。`;
+  else if (!engine.safetyReady) statusElement.textContent = "True Peak安全Gainを計算しています…";
+  else if (engine.safetyResult) statusElement.textContent = `再生できます。Master ${engine.safetyResult.fixedSafeGainDb.toFixed(2)} dB`;
+  else statusElement.textContent = "再生準備中です…";
 }
 
 function noteIsDon(type) {
@@ -441,7 +542,6 @@ function ejectedOpacity(ageMs) {
 function drawObjectTimeline(currentSeconds) {
   const context = timelineCtx;
   context.clearRect(0, 0, TIMELINE_WIDTH, TIMELINE_HEIGHT);
-
   context.fillStyle = "#171719";
   context.fillRect(0, LANE_TOP, TIMELINE_WIDTH, LANE_HEIGHT);
   context.fillStyle = "rgba(255,255,255,0.10)";
@@ -473,7 +573,6 @@ function drawObjectTimeline(currentSeconds) {
   }
 
   drawJudgeTarget(context, false);
-
   const startIndex = lowerBound(events, nowMs - EJECT_MAX_MS);
   const endIndex = lowerBound(events, nowMs + FUTURE_WINDOW_MS + 0.001);
 
@@ -482,8 +581,7 @@ function drawObjectTimeline(currentSeconds) {
     const dt = event.time_ms - nowMs;
     if (dt < 0) continue;
     const x = JUDGE_X + dt * pxPerMs;
-    const diameter = noteIsBig(event.type) ? BIG_NOTE_SIZE : NORMAL_NOTE_SIZE;
-    drawNote(context, x, LANE_CENTER_Y, diameter, event.type, 1);
+    drawNote(context, x, LANE_CENTER_Y, noteIsBig(event.type) ? BIG_NOTE_SIZE : NORMAL_NOTE_SIZE, event.type, 1);
   }
 
   for (let index = startIndex; index < endIndex; index += 1) {
@@ -514,7 +612,6 @@ function drawJudgeTarget(context, outerOnly) {
     context.moveTo(JUDGE_X, LANE_TOP + 10);
     context.lineTo(JUDGE_X, LANE_BOTTOM - 10);
     context.stroke();
-
     context.strokeStyle = "rgba(248,248,250,0.26)";
     context.beginPath();
     context.arc(JUDGE_X, LANE_CENTER_Y, NORMAL_NOTE_SIZE / 2, 0, Math.PI * 2);
@@ -557,10 +654,20 @@ function chooseMajorTick(durationSeconds) {
     .reduce((best, value) => Math.abs(value - target) < Math.abs(best - target) ? value : best, 1);
 }
 
+function roundedRect(context, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + r, y);
+  context.arcTo(x + width, y, x + width, y + height, r);
+  context.arcTo(x + width, y + height, x, y + height, r);
+  context.arcTo(x, y + height, x, y, r);
+  context.arcTo(x, y, x + width, y, r);
+  context.closePath();
+}
+
 function drawOverviewStatic() {
   const context = overviewStaticCtx;
   context.clearRect(0, 0, OVERVIEW_WIDTH, OVERVIEW_HEIGHT);
-
   if (!timelineChart || playbackDurationMs <= 0) return;
 
   const effectStart = timelineChart.effect_window_start_ms ?? timelineChart.kiai_start_ms ?? 0;
@@ -609,17 +716,6 @@ function drawOverviewStatic() {
   context.fillRect(OVERVIEW_WIDTH - width - 8, 65, width + 8, 19);
   context.fillStyle = "rgba(225,225,232,0.55)";
   context.fillText(endLabel, OVERVIEW_WIDTH - width - 4, 66);
-}
-
-function roundedRect(context, x, y, width, height, radius) {
-  const r = Math.min(radius, width / 2, height / 2);
-  context.beginPath();
-  context.moveTo(x + r, y);
-  context.arcTo(x + width, y, x + width, y + height, r);
-  context.arcTo(x + width, y + height, x, y + height, r);
-  context.arcTo(x, y + height, x, y, r);
-  context.arcTo(x, y, x + width, y, r);
-  context.closePath();
 }
 
 function drawOverviewCursor(currentMs, previewMs = null) {
@@ -753,16 +849,23 @@ effectVolumeInput.addEventListener("wheel", (event) => {
   setEffectVolume(Number(effectVolumeInput.value) + direction * 5);
 }, { passive: false });
 
-buildSoundSlots();
-initializeSourceSelector();
-setEffectVolume(80);
-drawObjectTimeline(0);
-drawOverviewStatic();
-drawOverviewCursor(0);
+async function bootstrap() {
+  buildSoundSlots();
+  initializeSourceSelector();
+  setEffectVolume(80);
+  drawObjectTimeline(0);
+  drawOverviewStatic();
+  drawOverviewCursor(0);
 
-loadCatalog().catch((error) => {
+  // Load all currently confirmed fixed preset sources before loading the first song,
+  // so the first common-master safety analysis already includes Preset A.
+  await preloadConfiguredPresets();
+  await loadCatalog();
+}
+
+bootstrap().catch((error) => {
   console.error(error);
   songArea.setAttribute("aria-busy", "false");
-  songArea.innerHTML = `<p class="error-note">曲asset catalogを読み込めませんでした。</p>`;
+  songArea.innerHTML = `<p class="error-note">初期化に失敗しました。</p>`;
   statusElement.textContent = error.message;
 });

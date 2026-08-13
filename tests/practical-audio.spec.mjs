@@ -70,7 +70,7 @@ async function setSeek(page, seconds) {
   }, seconds);
 }
 
-test("practical audio gate: confirmed desktop source model", async ({ page }) => {
+test("practical audio gate: My Sound + Preset A", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-song-id="song01"]')).toBeVisible();
   await waitForSafety(page);
@@ -88,16 +88,43 @@ test("practical audio gate: confirmed desktop source model", async ({ page }) =>
     expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(false);
   });
 
-  await test.step("2. My Sound is active and unresolved presets remain inert", async () => {
+  await test.step("2. Preset A is ready and source switching keeps common Master", async () => {
     const master = await masterDb(page);
     await resetSafetyLog(page);
 
-    await expect(page.locator('[data-source="my-sound"]')).toHaveAttribute("aria-checked", "true");
-    for (const preset of ["preset-a", "preset-b", "preset-c"]) {
-      await expect(page.locator(`[data-source="${preset}"]`)).toBeDisabled();
-      await expect(page.locator(`[data-source="${preset}"]`)).toHaveAttribute("data-source-state", "unconfigured");
+    const presetA = page.locator('[data-source="preset-a"]');
+    await expect(presetA).toBeEnabled();
+    await expect(presetA).toHaveAttribute("data-source-state", "ready");
+    await expect(page.locator('[data-source="preset-b"]')).toBeDisabled();
+    await expect(page.locator('[data-source="preset-c"]')).toBeDisabled();
+
+    for (const name of [
+      "PresetA-hitnormal.wav",
+      "PresetA-hitfinish.wav",
+      "PresetA-hitclap.wav",
+      "PresetA-hitwhistle.wav",
+    ]) {
+      const response = await page.request.get(`/presets/${name}`);
+      expect(response.ok()).toBe(true);
+      expect((await response.body()).byteLength).toBeGreaterThan(1000);
     }
 
+    await presetA.click();
+    await expect(presetA).toHaveAttribute("aria-checked", "true");
+    await expect(page.locator(".play-button")).toBeEnabled();
+    await expect(page.locator("#set-1-don")).toBeDisabled();
+    await expect(page.locator("#set-1-kat")).toBeDisabled();
+    await expect(page.locator(".sound-filename").nth(0)).toHaveText("PresetA-hitnormal.wav");
+    await expect(page.locator(".sound-filename").nth(1)).toHaveText("PresetA-hitfinish.wav");
+    await expect(page.locator(".sound-filename").nth(2)).toHaveText("PresetA-hitclap.wav");
+    await expect(page.locator(".sound-filename").nth(3)).toHaveText("PresetA-hitwhistle.wav");
+    expect(await masterDb(page)).toBe(master);
+    expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(false);
+
+    await page.locator('[data-source="my-sound"]').click();
+    await expect(page.locator('[data-source="my-sound"]')).toHaveAttribute("aria-checked", "true");
+    await expect(page.locator("#set-1-don")).toBeEnabled();
+    await expect(page.locator("#set-1-kat")).toBeEnabled();
     expect(await masterDb(page)).toBe(master);
     expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(false);
   });
@@ -135,7 +162,7 @@ test("practical audio gate: confirmed desktop source model", async ({ page }) =>
     expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(false);
   });
 
-  await test.step("5. Hitsound/song changes invalidate then rebuild safety", async () => {
+  await test.step("5. My Sound/song changes invalidate then rebuild safety", async () => {
     await resetSafetyLog(page);
     await setFileFromUrl(page, "#set-1-don", "/fixtures/loud-don.wav", "loud-normal.wav");
     await expect(page.locator(".play-button")).toBeDisabled();
