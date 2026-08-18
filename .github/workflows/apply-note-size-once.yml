@@ -1,0 +1,49 @@
+name: Apply Confirmed Note Size Once
+
+on:
+  push:
+    branches:
+      - integration/v23-stage5-final-ui-desktop
+    paths:
+      - tools/apply-note-size.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  apply-note-size:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Apply confirmed note size
+        run: node tools/apply-note-size.mjs
+      - name: Install test dependency
+        run: npm install
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+      - name: Run practical and desktop gates
+        run: npm run test:e2e
+        env:
+          CI: "true"
+      - name: Commit confirmed note size
+        run: |
+          if git diff --quiet -- script.js tests/desktop-ui.spec.mjs README_STAGE5.md; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add script.js tests/desktop-ui.spec.mjs README_STAGE5.md
+          git commit -m "Increase Object Timeline note and judge target size"
+          git push
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-note-size-report
+          path: playwright-report/
+          retention-days: 14
