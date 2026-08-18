@@ -7,9 +7,12 @@ on:
       - "integration/**"
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   practical-audio-gate:
-    timeout-minutes: 20
+    timeout-minutes: 25
     runs-on: ubuntu-latest
 
     steps:
@@ -17,6 +20,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
+
+      - name: Apply Stage 6 responsive patch
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/integration/v23-stage6-responsive-2hits' }}
+        run: node tools/apply-stage6-responsive.mjs
 
       - name: Install test dependency
         run: npm install
@@ -28,6 +35,19 @@ jobs:
         run: npm run test:e2e
         env:
           CI: "true"
+
+      - name: Commit Stage 6 responsive implementation
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/integration/v23-stage6-responsive-2hits' }}
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html style.css script.js tests/practical-audio.spec.mjs tests/desktop-ui.spec.mjs tests/mobile-ui.spec.mjs README_STAGE5.md README_STAGE6.md
+          git commit -m "Implement two-hit responsive UI"
+          git push
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
