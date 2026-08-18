@@ -1,0 +1,49 @@
+name: Apply Stage 6 Responsive Once
+
+on:
+  push:
+    branches:
+      - integration/v23-stage6-responsive-2hits
+    paths:
+      - tools/apply-stage6-responsive.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  apply-stage6-responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Apply Stage 6 responsive patch
+        run: node tools/apply-stage6-responsive.mjs
+      - name: Install test dependency
+        run: npm install
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+      - name: Run practical and responsive gates
+        run: npm run test:e2e
+        env:
+          CI: "true"
+      - name: Commit Stage 6 responsive implementation
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html style.css script.js tests/practical-audio.spec.mjs tests/desktop-ui.spec.mjs tests/mobile-ui.spec.mjs README_STAGE5.md README_STAGE6.md
+          git commit -m "Implement two-hit responsive UI"
+          git push
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-stage6-responsive-report
+          path: playwright-report/
+          retention-days: 14
