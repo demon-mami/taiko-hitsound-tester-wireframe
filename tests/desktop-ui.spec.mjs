@@ -87,21 +87,27 @@ test("desktop geometry and confirmed source states", async ({ page }, testInfo) 
     return {
       normalWidth: bodyWidth(702),
       bigWidth: bodyWidth(1068),
-      normalRim: pixel(674, 125),
-      bigRim: pixel(1040, 125),
+      normalRim: pixel(663, 125),
+      bigRim: pixel(1029, 125),
       normalAbove: pixel(702, 50),
       bigMarker: pixel(1068, 50),
       materialLight: pixel(692, 115),
       materialDark: pixel(712, 135),
+      judgeInnerRing: pixel(131, 125),
+      judgeGap: pixel(134, 125),
+      judgeOuterRing: pixel(137, 125),
     };
   });
 
   expect(Math.abs(noteStyle.normalWidth - noteStyle.bigWidth)).toBeLessThanOrEqual(2);
-  expect(noteStyle.normalWidth).toBeGreaterThanOrEqual(56);
+  expect(noteStyle.normalWidth).toBeGreaterThanOrEqual(78);
   expect(Math.min(...noteStyle.normalRim.slice(0, 3))).toBeGreaterThan(180);
   expect(Math.min(...noteStyle.bigRim.slice(0, 3))).toBeGreaterThan(180);
   expect(Math.max(...noteStyle.normalAbove.slice(0, 3))).toBeLessThan(60);
   expect(Math.min(...noteStyle.bigMarker.slice(0, 3))).toBeGreaterThan(200);
+  expect(Math.max(...noteStyle.judgeInnerRing.slice(0, 3))).toBeGreaterThan(35);
+  expect(Math.max(...noteStyle.judgeGap.slice(0, 3))).toBeLessThan(60);
+  expect(Math.min(...noteStyle.judgeOuterRing.slice(0, 3))).toBeGreaterThan(150);
   expect(noteStyle.materialLight[0] + noteStyle.materialLight[1] + noteStyle.materialLight[2])
     .toBeGreaterThan(noteStyle.materialDark[0] + noteStyle.materialDark[1] + noteStyle.materialDark[2]);
 

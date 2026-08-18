@@ -13,8 +13,9 @@ const LANE_BOTTOM = LANE_TOP + LANE_HEIGHT;
 const LANE_CENTER_Y = LANE_TOP + LANE_HEIGHT / 2;
 const JUDGE_X = 92;
 const FUTURE_WINDOW_MS = 1000;
-const NORMAL_NOTE_SIZE = 56;
+const NORMAL_NOTE_SIZE = 78;
 const BIG_NOTE_SIZE = NORMAL_NOTE_SIZE;
+const JUDGE_OUTER_DIAMETER = 90;
 const BIG_MARKER_WIDTH = 28;
 const BIG_MARKER_HEIGHT = 18;
 const BIG_MARKER_GAP = 33;
@@ -659,7 +660,7 @@ function drawJudgeTarget(context, outerOnly) {
     context.strokeStyle = "rgba(248,248,250,0.76)";
     context.lineWidth = 2;
     context.beginPath();
-    context.arc(JUDGE_X, LANE_CENTER_Y, 34, 0, Math.PI * 2);
+    context.arc(JUDGE_X, LANE_CENTER_Y, JUDGE_OUTER_DIAMETER / 2, 0, Math.PI * 2);
     context.stroke();
   }
   context.restore();

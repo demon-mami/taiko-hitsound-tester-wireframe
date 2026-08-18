@@ -16,15 +16,16 @@ This stage replaces the legacy three-SET / disc / waveform desktop interface wit
 - 5×5 compact song cards at 210×40px, using each song background and Title / Artist - Mapper metadata when available.
 - Selected song Micro Aura state.
 - Object Timeline note appearance:
-  - Normal and BIG use the same 56px Material Disc body.
+  - Normal and BIG use the same 78px Material Disc body.
   - Don = RGB(235,69,44), Ka = RGB(68,141,171).
   - Clear reference-like white circumference; no glossy white reflection stripe.
   - BIG adds only a white downward triangle marker above the disc.
+  - Judge target inner ring = 78px diameter; outer ring = 90px diameter.
 - 1340×420 Playback Stage:
   - 1340×250 Object Timeline
   - 1000ms fixed future window
   - x=92px judge point
-  - Normal / BIG disc body both 56px; BIG differs only by the upper marker
+  - Normal / BIG disc body both 78px; BIG differs only by the upper marker
   - approved left-back parabolic eject path and strong immediate fade
   - background width-fit at y=14px
 - 1000×84 Overview with effect-window band, density histogram, time ticks, current cursor, click/drag/keyboard seek.
