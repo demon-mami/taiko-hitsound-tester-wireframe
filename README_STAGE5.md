@@ -24,7 +24,7 @@ This stage replaces the legacy three-SET / disc / waveform desktop interface wit
   - 1340×250 Object Timeline
   - 1000ms fixed future window
   - x=92px judge point
-  - Normal 56px / Big 70px
+  - Normal / BIG disc body both 56px; BIG differs only by the upper marker
   - approved left-back parabolic eject path and strong immediate fade
   - background width-fit at y=14px
 - 1000×84 Overview with effect-window band, density histogram, time ticks, current cursor, click/drag/keyboard seek.
