@@ -6,6 +6,7 @@ on:
       - integration/v23-stage6-responsive-2hits
     paths:
       - tools/apply-stage6-responsive.mjs
+      - .github/workflows/apply-stage6-responsive-once.yml
 
 permissions:
   contents: write
