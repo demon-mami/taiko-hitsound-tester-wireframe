@@ -32,6 +32,10 @@ jobs:
             node tools/apply-stage6-responsive.mjs
           fi
 
+      - name: Apply Stage 6 mobile QA fixes
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/integration/v23-stage6-responsive-2hits') || (github.event_name == 'pull_request' && github.head_ref == 'integration/v23-stage6-responsive-2hits') }}
+        run: node tools/fix-stage6-tests.mjs
+
       - name: Install test dependency
         run: npm install
 
