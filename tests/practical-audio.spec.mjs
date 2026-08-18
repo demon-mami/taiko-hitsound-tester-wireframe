@@ -70,9 +70,18 @@ async function setSeek(page, seconds) {
   }, seconds);
 }
 
+async function chooseSong(page, songId) {
+  const mobilePicker = page.locator(".mobile-song-picker");
+  if (await mobilePicker.isVisible()) {
+    await page.locator("#mobile-song-select").selectOption(songId);
+  } else {
+    await page.locator(`[data-song-id="${songId}"]`).click();
+  }
+}
+
 test("practical audio gate: My Sound + Preset A", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator('[data-song-id="song01"]')).toBeVisible();
+  await expect(page.locator('[data-song-id="song01"]')).toBeAttached();
   await waitForSafety(page);
   await installSafetyObserver(page);
   await loadRequiredSounds(page);
@@ -100,9 +109,7 @@ test("practical audio gate: My Sound + Preset A", async ({ page }) => {
 
     for (const name of [
       "PresetA-hitnormal.wav",
-      "PresetA-hitfinish.wav",
       "PresetA-hitclap.wav",
-      "PresetA-hitwhistle.wav",
     ]) {
       const response = await page.request.get(`/presets/${name}`);
       expect(response.ok()).toBe(true);
@@ -115,9 +122,7 @@ test("practical audio gate: My Sound + Preset A", async ({ page }) => {
     await expect(page.locator("#set-1-don")).toBeDisabled();
     await expect(page.locator("#set-1-kat")).toBeDisabled();
     await expect(page.locator(".sound-filename").nth(0)).toHaveText("PresetA-hitnormal.wav");
-    await expect(page.locator(".sound-filename").nth(1)).toHaveText("PresetA-hitfinish.wav");
-    await expect(page.locator(".sound-filename").nth(2)).toHaveText("PresetA-hitclap.wav");
-    await expect(page.locator(".sound-filename").nth(3)).toHaveText("PresetA-hitwhistle.wav");
+    await expect(page.locator(".sound-filename").nth(1)).toHaveText("PresetA-hitclap.wav");
     expect(await masterDb(page)).toBe(master);
     expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(false);
 
@@ -171,13 +176,13 @@ test("practical audio gate: My Sound + Preset A", async ({ page }) => {
     expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(true);
 
     await resetSafetyLog(page);
-    await page.locator('[data-song-id="song02"]').click();
+    await chooseSong(page, "song02");
     await expect(page.locator(".play-button")).toBeDisabled();
     await waitForSafety(page);
     await expect(page.locator(".play-button")).toBeEnabled();
     expect((await safetyLog(page)).some((entry) => entry.ready === null)).toBe(true);
 
-    await expect(page.locator("#set-1-big_don")).toHaveValue("");
-    await expect(page.locator("#set-1-big_kat")).toHaveValue("");
+    await expect(page.locator("#set-1-big_don")).toHaveCount(0);
+    await expect(page.locator("#set-1-big_kat")).toHaveCount(0);
   });
 });

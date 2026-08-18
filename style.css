@@ -118,7 +118,7 @@ button { color: inherit; }
 
 .sound-slot-grid {
   display: grid;
-  grid-template-columns: repeat(4, 198px);
+  grid-template-columns: repeat(2, 280px);
   justify-content: center;
   gap: 10px;
   height: 50px;
@@ -529,4 +529,239 @@ button { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.001ms !important; }
+}
+
+
+/* ---------- Stage 6 mobile / two-hit responsive UI ---------- */
+.mobile-song-picker,
+.mobile-object-timeline {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  html,
+  body {
+    min-width: 0;
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100svh;
+  }
+
+  .app-shell {
+    width: 100%;
+    min-height: 100svh;
+    padding: 10px 12px max(18px, env(safe-area-inset-bottom));
+    overflow: visible;
+  }
+
+  .sound-source-area {
+    width: 100%;
+    height: auto;
+    margin: 0 auto 13px;
+  }
+
+  .source-selector {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    height: 42px;
+  }
+
+  .source-button {
+    height: 42px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 11px;
+  }
+
+  .sound-slot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    height: 56px;
+    margin-top: 8px;
+  }
+
+  .sound-slot,
+  .sound-trigger {
+    height: 56px;
+  }
+
+  .sound-trigger {
+    grid-template-columns: 44px minmax(0, 1fr);
+    padding: 6px 10px 6px 7px;
+    border-radius: 14px 10px 14px 10px;
+  }
+
+  .note-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .song-area {
+    display: none;
+  }
+
+  .mobile-song-picker {
+    display: block;
+    width: 100%;
+    height: 58px;
+    margin: 0 auto 24px;
+  }
+
+  .mobile-song-select-card {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 28px;
+    align-items: center;
+    width: 100%;
+    height: 58px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 11px;
+    background-color: #1b1b1f;
+    background-position: center;
+    background-size: cover;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.14),
+      inset 0 -1px 0 rgba(0,0,0,.58),
+      0 5px 12px rgba(0,0,0,.34);
+  }
+
+  .mobile-song-select-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.11), transparent 45%),
+      linear-gradient(90deg, rgba(7,7,10,.58), rgba(7,7,10,.78));
+  }
+
+  .mobile-song-copy {
+    min-width: 0;
+    padding: 7px 8px 7px 11px;
+    pointer-events: none;
+  }
+
+  .mobile-song-name,
+  .mobile-song-credit {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-song-name {
+    color: rgba(250,250,252,.96);
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .mobile-song-credit {
+    margin-top: 3px;
+    color: rgba(236,236,242,.68);
+    font-size: 10px;
+    line-height: 14px;
+  }
+
+  .mobile-song-chevron {
+    justify-self: center;
+    color: rgba(250,250,252,.78);
+    font-size: 20px;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .mobile-song-select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: .001;
+    cursor: pointer;
+  }
+
+  .playback-stage {
+    width: 100%;
+    height: 320px;
+    margin: 0 auto 8px;
+    border-radius: 14px;
+  }
+
+  .stage-background {
+    top: 4px !important;
+    width: 100%;
+    height: auto;
+  }
+
+  .stage-dim-top {
+    height: 34px;
+  }
+
+  .stage-dim-lower {
+    top: 158px;
+  }
+
+  .object-timeline {
+    display: none;
+  }
+
+  .mobile-object-timeline {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    left: 0;
+    display: block;
+    width: 100%;
+    height: 196px;
+    pointer-events: none;
+  }
+
+  .transport-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    height: auto;
+  }
+
+  .overview {
+    grid-column: 1;
+    width: 100%;
+    height: 72px;
+  }
+
+  .overview-static,
+  .overview-cursor {
+    width: 100%;
+    height: 72px;
+  }
+
+  .controls {
+    grid-column: 1;
+    grid-template-columns: 60px 10px minmax(0, 1fr);
+    width: 100%;
+    height: 60px;
+  }
+
+  .play-button {
+    width: 60px;
+    height: 60px;
+  }
+
+  .effect-volume {
+    width: 100%;
+    height: 60px;
+    padding: 8px 10px;
+  }
+
+  .effect-volume input {
+    width: 100%;
+  }
 }

@@ -28,13 +28,12 @@ const EJECT_PERSPECTIVE = 0.95;
 
 const OVERVIEW_WIDTH = 1000;
 const OVERVIEW_HEIGHT = 84;
+const MOBILE_TIMELINE_HEIGHT = 196;
 const FILE_LABEL_LIMIT = "taiko-normal-hitwhistle.wav".length;
 
 const SLOT_DEFS = [
-  { key: "don", role: "Normal", family: "don", primary: true },
-  { key: "big_don", role: "finish", family: "don", primary: false },
-  { key: "kat", role: "Clap", family: "kat", primary: true },
-  { key: "big_kat", role: "whistle", family: "kat", primary: false },
+  { key: "don", role: "hitnormal", family: "don", primary: true },
+  { key: "kat", role: "hitclap", family: "kat", primary: true },
 ];
 
 // UI source -> frozen three-container audio backend.
@@ -48,9 +47,7 @@ const SOURCE_CONFIG = Object.freeze({
     kind: "preset",
     files: Object.freeze({
       don: "PresetA-hitnormal.wav",
-      big_don: "PresetA-hitfinish.wav",
       kat: "PresetA-hitclap.wav",
-      big_kat: "PresetA-hitwhistle.wav",
     }),
   },
 });
@@ -58,8 +55,13 @@ const SOURCE_CONFIG = Object.freeze({
 const sourceSelector = document.querySelector("#source-selector");
 const soundSlotGrid = document.querySelector("#my-sound-slots");
 const songArea = document.querySelector("#song-area");
+const mobileSongSelect = document.querySelector("#mobile-song-select");
+const mobileSongSelectCard = document.querySelector("#mobile-song-select-card");
+const mobileSongName = document.querySelector("#mobile-song-name");
+const mobileSongCredit = document.querySelector("#mobile-song-credit");
 const stageBackground = document.querySelector("#stage-background");
 const timelineCanvas = document.querySelector("#object-timeline");
+const mobileTimelineCanvas = document.querySelector("#mobile-object-timeline");
 const overview = document.querySelector("#overview");
 const overviewStaticCanvas = document.querySelector("#overview-static");
 const overviewCursorCanvas = document.querySelector("#overview-cursor");
@@ -382,6 +384,7 @@ async function hydrateSongMetadata(song) {
 function renderSongs() {
   songArea.textContent = "";
   songArea.setAttribute("aria-busy", "false");
+  if (mobileSongSelect) mobileSongSelect.textContent = "";
 
   for (const song of songs) {
     const button = document.createElement("button");
@@ -404,6 +407,13 @@ function renderSongs() {
     button.append(name, credit);
     button.addEventListener("click", () => selectSong(song.id));
     songArea.append(button);
+
+    if (mobileSongSelect) {
+      const option = document.createElement("option");
+      option.value = song.id;
+      option.textContent = song.credit && song.credit !== "—" ? `${song.title} — ${song.credit}` : song.title;
+      mobileSongSelect.append(option);
+    }
   }
 }
 
@@ -412,6 +422,20 @@ function updateSongSelection(songId) {
     const active = button.dataset.songId === songId;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
+  }
+
+  const song = songs.find((entry) => entry.id === songId);
+  if (song && mobileSongSelect) mobileSongSelect.value = songId;
+  if (song && mobileSongSelectCard) {
+    mobileSongSelectCard.style.backgroundImage = `url("${ASSET_ROOT}${song.background}")`;
+    if (mobileSongName) {
+      mobileSongName.textContent = song.title;
+      mobileSongName.title = song.title;
+    }
+    if (mobileSongCredit) {
+      mobileSongCredit.textContent = song.credit;
+      mobileSongCredit.title = song.credit;
+    }
   }
 }
 
@@ -448,6 +472,7 @@ async function selectSong(songId) {
     playbackCurrentMs = 0;
     drawOverviewStatic();
     drawObjectTimeline(0);
+  drawMobileObjectTimeline(0);
     drawOverviewCursor(0);
     updatePlayAvailability();
   } catch (error) {
@@ -456,6 +481,7 @@ async function selectSong(songId) {
     playbackDurationMs = 0;
     drawOverviewStatic();
     drawObjectTimeline(0);
+  drawMobileObjectTimeline(0);
     drawOverviewCursor(0);
     statusElement.textContent = `曲assetの読み込みに失敗しました: ${error.message}`;
   }
@@ -480,6 +506,7 @@ function updatePlaybackView(currentSeconds, durationSeconds) {
   overview.setAttribute("aria-valuetext", `${formatTime(current)} of ${formatTime(duration)}`);
 
   drawObjectTimeline(current);
+  drawMobileObjectTimeline(current);
   drawOverviewCursor(current * 1000, overviewPreviewMs);
 }
 
@@ -499,7 +526,7 @@ function updatePlayAvailability() {
   seekInput.disabled = !engine.musicBuffer;
 
   if (!engine.musicBuffer) statusElement.textContent = "曲assetを読み込んでいます…";
-  else if (!engine.hasRequiredHitsounds(setIndex)) statusElement.textContent = activeSource === "my-sound" ? "Normal / Clapを読み込んでください。" : `${config.label}を準備できませんでした。`;
+  else if (!engine.hasRequiredHitsounds(setIndex)) statusElement.textContent = activeSource === "my-sound" ? "hitnormal / hitclapを読み込んでください。" : `${config.label}を準備できませんでした。`;
   else if (!engine.safetyReady) statusElement.textContent = "True Peak安全Gainを計算しています…";
   else if (engine.safetyResult) statusElement.textContent = `再生できます。Master ${engine.safetyResult.fixedSafeGainDb.toFixed(2)} dB`;
   else statusElement.textContent = "再生準備中です…";
@@ -577,6 +604,129 @@ function ejectedOpacity(ageMs) {
   if (ageMs <= 85) return 0.40 + (0.18 - 0.40) * ((ageMs - 50) / 35);
   if (ageMs <= 130) return 0.18 * (1 - ((ageMs - 85) / 45));
   return 0;
+}
+
+function sizeMobileTimelineCanvas(width, height) {
+  if (!mobileTimelineCanvas) return null;
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const pixelWidth = Math.max(1, Math.round(width * dpr));
+  const pixelHeight = Math.max(1, Math.round(height * dpr));
+  if (mobileTimelineCanvas.width !== pixelWidth || mobileTimelineCanvas.height !== pixelHeight) {
+    mobileTimelineCanvas.width = pixelWidth;
+    mobileTimelineCanvas.height = pixelHeight;
+  }
+  const context = mobileTimelineCanvas.getContext("2d");
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  context.imageSmoothingEnabled = true;
+  return context;
+}
+
+function drawMobileJudgeTarget(context, geometry, outerOnly) {
+  const { judgeX, noteY, laneTop, laneBottom, noteDiameter, outerDiameter } = geometry;
+  context.save();
+  if (!outerOnly) {
+    context.strokeStyle = "rgba(248,248,250,0.18)";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(judgeX, laneTop + 8);
+    context.lineTo(judgeX, laneBottom - 8);
+    context.stroke();
+
+    context.strokeStyle = "rgba(248,248,250,0.26)";
+    context.beginPath();
+    context.arc(judgeX, noteY, noteDiameter / 2, 0, Math.PI * 2);
+    context.stroke();
+  } else {
+    context.strokeStyle = "rgba(248,248,250,0.76)";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(judgeX, noteY, outerDiameter / 2, 0, Math.PI * 2);
+    context.stroke();
+  }
+  context.restore();
+}
+
+function drawMobileObjectTimeline(currentSeconds) {
+  if (!mobileTimelineCanvas) return;
+  const rect = mobileTimelineCanvas.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return;
+
+  const width = rect.width;
+  const height = MOBILE_TIMELINE_HEIGHT;
+  const context = sizeMobileTimelineCanvas(width, height);
+  if (!context) return;
+  context.clearRect(0, 0, width, height);
+
+  // Reuses the proven responsive principles from osutaiko-mami-viewer:
+  // viewport-derived lane geometry, hit position and px/ms mapping.
+  const laneHeight = clamp(width * 0.305, 108, 128);
+  const laneTop = Math.round((height - laneHeight) / 2);
+  const laneBottom = laneTop + laneHeight;
+  const noteY = laneTop + laneHeight / 2;
+  const noteDiameter = laneHeight * (NORMAL_NOTE_SIZE / LANE_HEIGHT);
+  const outerDiameter = noteDiameter * (JUDGE_OUTER_DIAMETER / NORMAL_NOTE_SIZE);
+  const judgeX = clamp(width * 0.12, 42, 52);
+  const pxPerMs = (width - judgeX - 12) / FUTURE_WINDOW_MS;
+  const geometry = { laneHeight, laneTop, laneBottom, noteY, noteDiameter, outerDiameter, judgeX, pxPerMs };
+
+  context.fillStyle = "#171719";
+  context.fillRect(0, laneTop, width, laneHeight);
+  context.fillStyle = "rgba(255,255,255,0.10)";
+  context.fillRect(0, laneTop, width, 1);
+  context.fillStyle = "rgba(0,0,0,0.28)";
+  context.fillRect(0, laneBottom - 1, width, 1);
+
+  if (!timelineChart?.events?.length) {
+    drawMobileJudgeTarget(context, geometry, false);
+    drawMobileJudgeTarget(context, geometry, true);
+    return;
+  }
+
+  const nowMs = currentSeconds * 1000;
+  const events = timelineChart.events;
+  const measureTimes = timelineChart.measure_lines_ms || timelineChart.measureLinesMs || [];
+
+  context.strokeStyle = "rgba(255,255,255,0.14)";
+  context.lineWidth = 1;
+  for (const measureMs of measureTimes) {
+    const dt = measureMs - nowMs;
+    if (dt < 0 || dt > FUTURE_WINDOW_MS) continue;
+    const x = judgeX + dt * pxPerMs;
+    context.beginPath();
+    context.moveTo(x, laneTop + 8);
+    context.lineTo(x, laneBottom - 8);
+    context.stroke();
+  }
+
+  drawMobileJudgeTarget(context, geometry, false);
+  const startIndex = lowerBound(events, nowMs - EJECT_MAX_MS);
+  const endIndex = lowerBound(events, nowMs + FUTURE_WINDOW_MS + 0.001);
+
+  for (let index = startIndex; index < endIndex; index += 1) {
+    const event = events[index];
+    const dt = event.time_ms - nowMs;
+    if (dt < 0) continue;
+    drawNote(context, judgeX + dt * pxPerMs, noteY, noteDiameter, event.type, 1);
+  }
+
+  const xScale = width / TIMELINE_WIDTH;
+  const yScale = laneHeight / LANE_HEIGHT;
+  for (let index = startIndex; index < endIndex; index += 1) {
+    const event = events[index];
+    const ageMs = nowMs - event.time_ms;
+    if (ageMs < 0 || ageMs > EJECT_MAX_MS) continue;
+    const alpha = ejectedOpacity(ageMs);
+    if (alpha <= 0) continue;
+
+    const age = ageMs / 1000;
+    const x = judgeX + EJECT_VX * xScale * age;
+    const y = noteY + EJECT_VY0 * yScale * age + 0.5 * EJECT_GRAVITY * yScale * age * age;
+    const z = EJECT_Z_RATE * age;
+    const scale = 1 / (1 + EJECT_PERSPECTIVE * z);
+    drawNote(context, x, y, noteDiameter * scale, event.type, alpha);
+  }
+
+  drawMobileJudgeTarget(context, geometry, true);
 }
 
 function drawObjectTimeline(currentSeconds) {
@@ -889,11 +1039,19 @@ effectVolumeInput.addEventListener("wheel", (event) => {
   setEffectVolume(Number(effectVolumeInput.value) + direction * 5);
 }, { passive: false });
 
+mobileSongSelect?.addEventListener("change", () => {
+  if (mobileSongSelect.value) selectSong(mobileSongSelect.value);
+});
+
+window.addEventListener("resize", () => drawMobileObjectTimeline(playbackCurrentMs / 1000));
+window.addEventListener("orientationchange", () => setTimeout(() => drawMobileObjectTimeline(playbackCurrentMs / 1000), 0));
+
 async function bootstrap() {
   buildSoundSlots();
   initializeSourceSelector();
   setEffectVolume(80);
   drawObjectTimeline(0);
+  drawMobileObjectTimeline(0);
   drawOverviewStatic();
   drawOverviewCursor(0);
 

@@ -34,10 +34,22 @@
         <p class="loading-note">曲assetを読み込んでいます…</p>
       </section>
 
+      <section class="mobile-song-picker" id="mobile-song-picker" aria-label="Test song">
+        <div class="mobile-song-select-card" id="mobile-song-select-card">
+          <span class="mobile-song-copy">
+            <strong class="mobile-song-name" id="mobile-song-name">曲assetを読み込んでいます…</strong>
+            <span class="mobile-song-credit" id="mobile-song-credit">—</span>
+          </span>
+          <span class="mobile-song-chevron" aria-hidden="true">⌄</span>
+          <select class="mobile-song-select" id="mobile-song-select" aria-label="曲を選択"></select>
+        </div>
+      </section>
+
       <section class="playback-stage" id="playback-stage" aria-label="Object timeline and selected song background">
         <img class="stage-background" id="stage-background" alt="" />
         <div class="stage-dim stage-dim-top" aria-hidden="true"></div>
         <div class="stage-dim stage-dim-lower" aria-hidden="true"></div>
+        <canvas class="mobile-object-timeline" id="mobile-object-timeline" width="1" height="1" aria-label="Current osu!taiko notes — mobile"></canvas>
         <canvas class="object-timeline" id="object-timeline" width="1340" height="250" aria-label="Current osu!taiko notes"></canvas>
       </section>
 

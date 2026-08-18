@@ -1,3 +1,5 @@
+> Stage 6 branch note: this document records the Stage 5 four-slot state. The current Stage 6 specification is in README_STAGE6.md.
+
 # Stage 5 — Desktop Final UI Integration
 
 ## Scope

@@ -44,6 +44,11 @@ test("desktop geometry and confirmed source states", async ({ page }, testInfo) 
   await expect(page.locator('[data-source="preset-a"]')).toHaveAttribute("data-source-state", "ready");
   await expect(page.locator('[data-source="preset-b"]')).toBeDisabled();
   await expect(page.locator('[data-source="preset-c"]')).toBeDisabled();
+  await expect(page.locator(".sound-slot")).toHaveCount(2);
+  await expect(page.locator("#set-1-big_don")).toHaveCount(0);
+  await expect(page.locator("#set-1-big_kat")).toHaveCount(0);
+  await expect(page.locator(".mobile-song-picker")).toBeHidden();
+  await expect(page.locator("#mobile-object-timeline")).toBeHidden();
 
   await expect(page.locator(".disc-panel")).toHaveCount(0);
   await expect(page.locator(".waveform-panel")).toHaveCount(0);
