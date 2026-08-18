@@ -17,13 +17,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
 
       - name: Apply Stage 6 responsive patch
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/integration/v23-stage6-responsive-2hits' }}
-        run: node tools/apply-stage6-responsive.mjs
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/integration/v23-stage6-responsive-2hits') || (github.event_name == 'pull_request' && github.head_ref == 'integration/v23-stage6-responsive-2hits') }}
+        run: |
+          if [ -f README_STAGE6.md ]; then
+            echo "Stage 6 responsive patch already applied."
+          else
+            node tools/apply-stage6-responsive.mjs
+          fi
 
       - name: Install test dependency
         run: npm install
@@ -37,7 +44,7 @@ jobs:
           CI: "true"
 
       - name: Commit Stage 6 responsive implementation
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/integration/v23-stage6-responsive-2hits' }}
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/integration/v23-stage6-responsive-2hits') || (github.event_name == 'pull_request' && github.head_ref == 'integration/v23-stage6-responsive-2hits') }}
         run: |
           if git diff --quiet; then
             echo "No changes to commit."
