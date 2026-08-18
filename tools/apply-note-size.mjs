@@ -36,7 +36,7 @@ writeFileSync("tests/desktop-ui.spec.mjs", test);
 
 let readme = readFileSync("README_STAGE5.md", "utf8");
 readme = replaceRequired(readme, "Normal and BIG use the same 56px Material Disc body.", "Normal and BIG use the same 78px Material Disc body.", "README note diameter");
-readme = replaceRequired(readme, "Normal 56px / Big 56px", "Normal 78px / Big 78px", "README stage note sizes");
+readme = replaceRequired(readme, "Normal / BIG disc body both 56px; BIG differs only by the upper marker", "Normal / BIG disc body both 78px; BIG differs only by the upper marker", "README stage note sizes");
 const noteLine = "  - BIG adds only a white downward triangle marker above the disc.\n";
 const judgeLine = "  - Judge target inner ring = 78px diameter; outer ring = 90px diameter.\n";
 if (!readme.includes(judgeLine)) readme = replaceRequired(readme, noteLine, `${noteLine}${judgeLine}`, "README judge geometry");
