@@ -48,6 +48,19 @@ test("desktop geometry and confirmed source states", async ({ page }, testInfo) 
   await expect(page.locator(".disc-panel")).toHaveCount(0);
   await expect(page.locator(".waveform-panel")).toHaveCount(0);
 
+  // The song button becomes visible before the async song/safety pipeline finishes.
+  // Wait for the renderer itself instead of sampling an intentionally empty first frame.
+  await expect.poll(async () => page.locator("#object-timeline").evaluate((canvas) => {
+    const ctx = canvas.getContext("2d");
+    const ratio = canvas.width / 1340;
+    let active = 0;
+    for (let x = 657; x <= 747; x += 1) {
+      const p = ctx.getImageData(Math.round(x * ratio), Math.round(125 * ratio), 1, 1).data;
+      if (p[0] > 42 || p[1] > 42 || p[2] > 42) active += 1;
+    }
+    return active;
+  }), { timeout: 30_000 }).toBeGreaterThan(0);
+
   const noteStyle = await page.locator("#object-timeline").evaluate((canvas) => {
     const ctx = canvas.getContext("2d");
     const ratio = canvas.width / 1340;
