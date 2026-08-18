@@ -9,45 +9,77 @@
   </head>
   <body>
     <main class="app-shell">
-      <h1>osu!taiko Hitsound Tester</h1>
+      <h1 class="visually-hidden">osu!taiko Hitsound Tester</h1>
 
-      <section class="set-area" aria-label="Hitsound sets" id="set-area"></section>
+      <section class="sound-source-area" aria-label="Hitsound source">
+        <div class="source-selector" id="source-selector" role="radiogroup" aria-label="Hitsound source">
+          <button class="source-button is-active" type="button" data-source="my-sound" role="radio" aria-checked="true">
+            My Sound
+          </button>
+          <button class="source-button" type="button" data-source="preset-a" role="radio" aria-checked="false" aria-disabled="true" disabled title="Preset A は未設定です。">
+            Preset A
+          </button>
+          <button class="source-button" type="button" data-source="preset-b" role="radio" aria-checked="false" aria-disabled="true" disabled title="Preset B は未設定です。">
+            Preset B
+          </button>
+          <button class="source-button" type="button" data-source="preset-c" role="radio" aria-checked="false" aria-disabled="true" disabled title="Preset C は未設定です。">
+            Preset C
+          </button>
+        </div>
+
+        <div class="sound-slot-grid" id="my-sound-slots" aria-label="My Sound files"></div>
+      </section>
 
       <section class="song-area" aria-label="Test songs" id="song-area" aria-busy="true">
         <p class="loading-note">曲assetを読み込んでいます…</p>
       </section>
 
-      <section class="playback-area" aria-label="Playback check">
-        <div class="disc-panel">
-          <div class="disc" role="img" aria-label="Selected song artwork">
-            <span class="disc-hole" aria-hidden="true"></span>
-            <span class="disc-label">—</span>
-          </div>
+      <section class="playback-stage" id="playback-stage" aria-label="Object timeline and selected song background">
+        <img class="stage-background" id="stage-background" alt="" />
+        <div class="stage-dim stage-dim-top" aria-hidden="true"></div>
+        <div class="stage-dim stage-dim-lower" aria-hidden="true"></div>
+        <canvas class="object-timeline" id="object-timeline" width="1340" height="250" aria-label="Current osu!taiko notes"></canvas>
+      </section>
+
+      <section class="transport-row player is-paused" data-player-state="paused" aria-label="Playback controls">
+        <div
+          class="overview"
+          id="overview"
+          role="slider"
+          tabindex="0"
+          aria-label="Playback position"
+          aria-valuemin="0"
+          aria-valuemax="0"
+          aria-valuenow="0"
+          aria-valuetext="0:00 of 0:00"
+        >
+          <canvas class="overview-static" id="overview-static" width="1000" height="84" aria-hidden="true"></canvas>
+          <canvas class="overview-cursor" id="overview-cursor" width="1000" height="84" aria-hidden="true"></canvas>
         </div>
 
-        <div class="right-panel">
-          <div class="waveform-panel">
-            <canvas class="waveform" width="640" height="250" aria-label="Don and Kat waveform preview"></canvas>
-          </div>
+        <div class="controls">
+          <button class="play-button" type="button" aria-label="Play" aria-pressed="false" disabled>
+            <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="play-shape" d="M8 5.4 18 12 8 18.6Z"></path>
+              <path class="pause-shape" d="M7 5h4v14H7Zm6 0h4v14h-4Z"></path>
+            </svg>
+          </button>
 
           <div class="effect-volume" aria-label="Effect volume">
-            <label for="effect-volume-input">Effect Volume</label>
-            <input id="effect-volume-input" type="range" min="0" max="100" step="5" value="80" />
-            <output id="effect-volume-output" for="effect-volume-input">80%</output>
-          </div>
-
-          <div class="player is-paused" data-player-state="paused">
-            <button class="play-button" type="button" aria-label="Play" aria-pressed="false" disabled>
-              <span class="play-icon" aria-hidden="true">▶</span>
-            </button>
-            <input class="seek-input" type="range" min="0" max="1" step="0.001" value="0" aria-label="Playback position" disabled />
-            <div class="time-row" aria-live="off">
-              <time class="current-time" datetime="PT0S">00:00</time>
-              <time class="total-time" datetime="PT0S">00:00</time>
+            <div class="effect-volume-header">
+              <label for="effect-volume-input">Effect Volume</label>
+              <output id="effect-volume-output" for="effect-volume-input">80%</output>
             </div>
-            <p class="player-status" aria-live="polite">曲とDon/Katを準備してください。</p>
+            <input id="effect-volume-input" type="range" min="0" max="100" step="5" value="80" />
           </div>
         </div>
+
+        <input class="seek-input visually-hidden" type="range" min="0" max="1" step="0.001" value="0" aria-label="Playback position" disabled />
+        <div class="time-row visually-hidden" aria-live="off">
+          <time class="current-time" datetime="PT0S">00:00</time>
+          <time class="total-time" datetime="PT0S">00:00</time>
+        </div>
+        <p class="player-status visually-hidden" aria-live="polite">曲assetを読み込んでいます…</p>
       </section>
     </main>
   </body>
