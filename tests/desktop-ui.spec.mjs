@@ -48,8 +48,9 @@ test("desktop geometry and confirmed source states", async ({ page }, testInfo) 
   await expect(page.locator(".disc-panel")).toHaveCount(0);
   await expect(page.locator(".waveform-panel")).toHaveCount(0);
 
-  // The song button becomes visible before the async song/safety pipeline finishes.
-  // Wait for the renderer itself instead of sampling an intentionally empty first frame.
+  // Song cards render before the async song/safety and background-image pipelines finish.
+  // Wait for both visible Stage layers so browser screenshots represent the settled UI.
+  await expect(page.locator("#stage-background")).toHaveClass(/is-ready/, { timeout: 30_000 });
   await expect.poll(async () => page.locator("#object-timeline").evaluate((canvas) => {
     const ctx = canvas.getContext("2d");
     const ratio = canvas.width / 1340;
