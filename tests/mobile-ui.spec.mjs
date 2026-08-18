@@ -35,7 +35,7 @@ test("mobile dedicated layout: native song picker and responsive timeline", asyn
   expect(geometry.stage.width).toBe(406);
   expect(geometry.stage.height).toBe(320);
   expect(geometry.mobileTimeline.width).toBe(geometry.stage.width - 2);
-  expect(geometry.mobileTimeline.height).toBe(196);
+  expect(geometry.mobileTimeline.height).toBe(136);
   expect(geometry.overview.width).toBe(406);
   expect(geometry.controls.width).toBe(406);
   expect(geometry.source.width).toBe(406);

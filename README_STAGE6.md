@@ -44,7 +44,10 @@ It does **not** copy the viewer's old note sizes or visual styling. Hitsound Tes
 - Normal and BIG same disc size
 - BIG-only downward triangle marker
 - judge inner diameter = note diameter
-- judge outer/inner ratio = 90/78
+- Mobile lane = 80px at the 430px reference width
+- Mobile note / judge inner diameter = 40px
+- Mobile judge outer diameter = 46px
+- judge outer/inner ratio = 46/40 on Mobile
 - confirmed post-hit parabolic eject/fade behavior, scaled to the Mobile viewport
 
 Desktop Audio Core, True Peak worker/WASM and common fixed-master policy remain unchanged.

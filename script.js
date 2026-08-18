@@ -28,7 +28,7 @@ const EJECT_PERSPECTIVE = 0.95;
 
 const OVERVIEW_WIDTH = 1000;
 const OVERVIEW_HEIGHT = 84;
-const MOBILE_TIMELINE_HEIGHT = 196;
+const MOBILE_TIMELINE_HEIGHT = 136;
 const FILE_LABEL_LIMIT = "taiko-normal-hitwhistle.wav".length;
 
 const SLOT_DEFS = [
@@ -659,12 +659,12 @@ function drawMobileObjectTimeline(currentSeconds) {
 
   // Reuses the proven responsive principles from osutaiko-mami-viewer:
   // viewport-derived lane geometry, hit position and px/ms mapping.
-  const laneHeight = clamp(width * 0.305, 108, 128);
+  const laneHeight = 80;
   const laneTop = Math.round((height - laneHeight) / 2);
   const laneBottom = laneTop + laneHeight;
   const noteY = laneTop + laneHeight / 2;
-  const noteDiameter = laneHeight * (NORMAL_NOTE_SIZE / LANE_HEIGHT);
-  const outerDiameter = noteDiameter * (JUDGE_OUTER_DIAMETER / NORMAL_NOTE_SIZE);
+  const noteDiameter = 40;
+  const outerDiameter = 46;
   const judgeX = clamp(width * 0.12, 42, 52);
   const pxPerMs = (width - judgeX - 12) / FUTURE_WINDOW_MS;
   const geometry = { laneHeight, laneTop, laneBottom, noteY, noteDiameter, outerDiameter, judgeX, pxPerMs };
