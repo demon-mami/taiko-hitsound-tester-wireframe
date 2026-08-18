@@ -15,6 +15,11 @@ This stage replaces the legacy three-SET / disc / waveform desktop interface wit
 - Preset B / C remain explicit unavailable states until their confirmed files/config are supplied.
 - 5×5 compact song cards at 210×40px, using each song background and Title / Artist - Mapper metadata when available.
 - Selected song Micro Aura state.
+- Object Timeline note appearance:
+  - Normal and BIG use the same 56px Material Disc body.
+  - Don = RGB(235,69,44), Ka = RGB(68,141,171).
+  - Clear reference-like white circumference; no glossy white reflection stripe.
+  - BIG adds only a white downward triangle marker above the disc.
 - 1340×420 Playback Stage:
   - 1340×250 Object Timeline
   - 1000ms fixed future window

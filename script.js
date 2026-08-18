@@ -14,7 +14,10 @@ const LANE_CENTER_Y = LANE_TOP + LANE_HEIGHT / 2;
 const JUDGE_X = 92;
 const FUTURE_WINDOW_MS = 1000;
 const NORMAL_NOTE_SIZE = 56;
-const BIG_NOTE_SIZE = 70;
+const BIG_NOTE_SIZE = NORMAL_NOTE_SIZE;
+const BIG_MARKER_WIDTH = 28;
+const BIG_MARKER_HEIGHT = 18;
+const BIG_MARKER_GAP = 33;
 const EJECT_MAX_MS = 260;
 const EJECT_VX = -510;
 const EJECT_VY0 = -700;
@@ -509,25 +512,61 @@ function noteIsBig(type) {
   return type === "big_don" || type === "big_kat";
 }
 
+function scaleColor(color, factor) {
+  return color.map((channel) => clamp(Math.round(channel * factor), 0, 255));
+}
+
+function drawBigMarker(context, x, y, diameter) {
+  const scale = diameter / NORMAL_NOTE_SIZE;
+  const halfWidth = (BIG_MARKER_WIDTH * scale) / 2;
+  const markerHeight = BIG_MARKER_HEIGHT * scale;
+  const apexY = y - diameter / 2 - BIG_MARKER_GAP * scale;
+  const baseY = apexY - markerHeight;
+
+  context.beginPath();
+  context.moveTo(x - halfWidth, baseY);
+  context.lineTo(x + halfWidth, baseY);
+  context.lineTo(x, apexY);
+  context.closePath();
+  context.fillStyle = "rgba(255,255,255,0.96)";
+  context.fill();
+}
+
 function drawNote(context, x, y, diameter, type, alpha = 1) {
   const radius = diameter / 2;
   const color = noteIsDon(type) ? DON_RGB : KAT_RGB;
+  const lightColor = scaleColor(color, 1.13);
+  const darkColor = scaleColor(color, 0.72);
+
   context.save();
   context.globalAlpha = clamp(alpha, 0, 1);
+
+  // Material Disc: restrained internal depth without a glossy white reflection band.
+  const material = context.createRadialGradient(
+    x - radius * 0.28,
+    y - radius * 0.32,
+    Math.max(1, radius * 0.10),
+    x + radius * 0.08,
+    y + radius * 0.12,
+    radius * 1.08,
+  );
+  material.addColorStop(0, rgba(lightColor, 1));
+  material.addColorStop(0.48, rgba(color, 1));
+  material.addColorStop(1, rgba(darkColor, 1));
+
   context.beginPath();
   context.arc(x, y, radius, 0, Math.PI * 2);
-  context.fillStyle = rgba(color, 0.96);
+  context.fillStyle = material;
   context.fill();
-  context.lineWidth = noteIsBig(type) ? 2 : 1;
-  context.strokeStyle = "rgba(255,255,255,0.44)";
+
+  // Reference-like clear white circumference. The rim scales with the ejected note.
+  context.lineWidth = Math.max(1.25, diameter * (4 / NORMAL_NOTE_SIZE));
+  context.strokeStyle = "rgba(255,255,255,0.96)";
   context.stroke();
-  if (noteIsBig(type)) {
-    context.beginPath();
-    context.arc(x, y, radius - 6, 0, Math.PI * 2);
-    context.lineWidth = 1;
-    context.strokeStyle = "rgba(255,255,255,0.30)";
-    context.stroke();
-  }
+
+  // BIG is deliberately the same disc size/material as Normal; only the upper marker differs.
+  if (noteIsBig(type)) drawBigMarker(context, x, y, diameter);
+
   context.restore();
 }
 
