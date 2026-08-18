@@ -7,9 +7,6 @@ on:
       - "integration/**"
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   practical-audio-gate:
     timeout-minutes: 20
@@ -21,9 +18,6 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Apply confirmed note geometry
-        run: node tools/apply-note-size.mjs
-
       - name: Install test dependency
         run: npm install
 
@@ -34,19 +28,6 @@ jobs:
         run: npm run test:e2e
         env:
           CI: "true"
-
-      - name: Commit confirmed note geometry
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/integration/v23-stage5-final-ui-desktop' }}
-        run: |
-          if git diff --quiet -- script.js tests/desktop-ui.spec.mjs README_STAGE5.md; then
-            echo "No changes to commit."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add script.js tests/desktop-ui.spec.mjs README_STAGE5.md
-          git commit -m "Increase Object Timeline note and judge target size"
-          git push
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
