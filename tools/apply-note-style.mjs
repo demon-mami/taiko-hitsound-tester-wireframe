@@ -1,3 +1,4 @@
+// One-shot Stage 5 renderer patch. Remove after successful application.
 import { readFileSync, writeFileSync } from "node:fs";
 
 function replaceRequired(source, before, after, label) {
