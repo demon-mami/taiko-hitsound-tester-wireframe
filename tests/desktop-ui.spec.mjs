@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("desktop geometry and confirmed source states", async ({ page }) => {
+test("desktop geometry and confirmed source states", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await expect(page.locator('[data-song-id="song01"]')).toBeVisible();
@@ -47,4 +47,10 @@ test("desktop geometry and confirmed source states", async ({ page }) => {
 
   await expect(page.locator(".disc-panel")).toHaveCount(0);
   await expect(page.locator(".waveform-panel")).toHaveCount(0);
+
+  const screenshot = await page.screenshot({ fullPage: true });
+  await testInfo.attach("desktop-stage5-1440x900", {
+    body: screenshot,
+    contentType: "image/png",
+  });
 });
