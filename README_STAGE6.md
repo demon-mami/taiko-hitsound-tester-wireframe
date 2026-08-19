@@ -27,7 +27,7 @@ Mobile is not a scaled Desktop layout. At <=767px:
 1. Source selector remains four choices.
 2. Two hitsound slots are shown side by side.
 3. Song selection is collapsed to one selected-song acrylic card with a transparent native `select` overlay. Tapping it invokes the platform song picker for all catalog songs.
-4. Playback Stage becomes full available width and 320px tall.
+4. Playback Stage becomes full available width and 188px tall; the lane is the primary visual and the background below it is limited to about 80px.
 5. A dedicated Mobile Object Timeline canvas is used instead of CSS-scaling the 1340px Desktop canvas.
 6. Overview remains the seek surface and becomes full width.
 7. Play/Pause and Effect Volume occupy a final full-width control row.
@@ -47,6 +47,8 @@ It does **not** copy the viewer's old note sizes or visual styling. Hitsound Tes
 - Mobile lane = 80px at the 430px reference width
 - Mobile note / judge inner diameter = 40px
 - Mobile judge outer diameter = 46px
+- Mobile horizontal time scale = 1.15× relative to the previous Stage 6 mapping; judge position itself is unchanged
+- 430×932-class tall portrait layouts spend the surplus vertical space mainly above and below Playback Stage so Object Timeline becomes the visual focal point
 - judge outer/inner ratio = 46/40 on Mobile
 - confirmed post-hit parabolic eject/fade behavior, scaled to the Mobile viewport
 

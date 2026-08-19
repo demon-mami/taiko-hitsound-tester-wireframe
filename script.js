@@ -29,6 +29,7 @@ const EJECT_PERSPECTIVE = 0.95;
 const OVERVIEW_WIDTH = 1000;
 const OVERVIEW_HEIGHT = 84;
 const MOBILE_TIMELINE_HEIGHT = 136;
+const MOBILE_TIMELINE_X_SCALE = 1.15;
 const FILE_LABEL_LIMIT = "taiko-normal-hitwhistle.wav".length;
 
 const SLOT_DEFS = [
@@ -666,7 +667,7 @@ function drawMobileObjectTimeline(currentSeconds) {
   const noteDiameter = 40;
   const outerDiameter = 46;
   const judgeX = clamp(width * 0.12, 42, 52);
-  const pxPerMs = (width - judgeX - 12) / FUTURE_WINDOW_MS;
+  const pxPerMs = ((width - judgeX - 12) / FUTURE_WINDOW_MS) * MOBILE_TIMELINE_X_SCALE;
   const geometry = { laneHeight, laneTop, laneBottom, noteY, noteDiameter, outerDiameter, judgeX, pxPerMs };
 
   context.fillStyle = "#171719";

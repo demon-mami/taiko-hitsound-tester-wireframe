@@ -29,16 +29,19 @@ test("mobile dedicated layout: native song picker and responsive timeline", asyn
       overview: rect(".overview"),
       controls: rect(".controls"),
       source: rect(".sound-source-area"),
+      songPicker: rect(".mobile-song-picker"),
     };
   });
 
   expect(geometry.stage.width).toBe(406);
-  expect(geometry.stage.height).toBe(320);
+  expect(geometry.stage.height).toBe(188);
   expect(geometry.mobileTimeline.width).toBe(geometry.stage.width - 2);
   expect(geometry.mobileTimeline.height).toBe(136);
   expect(geometry.overview.width).toBe(406);
   expect(geometry.controls.width).toBe(406);
   expect(geometry.source.width).toBe(406);
+  expect(geometry.stage.y - (geometry.songPicker.y + geometry.songPicker.height)).toBeGreaterThanOrEqual(160);
+  expect(geometry.overview.y - (geometry.stage.y + geometry.stage.height)).toBeGreaterThanOrEqual(130);
 
   await expect.poll(async () => page.locator("#mobile-object-timeline").evaluate((canvas) => canvas.width), { timeout: 30_000 }).toBeGreaterThan(400);
 

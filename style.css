@@ -610,7 +610,7 @@ button { color: inherit; }
     display: block;
     width: 100%;
     height: 58px;
-    margin: 0 auto 24px;
+    margin: 0 auto 48px;
   }
 
   .mobile-song-select-card {
@@ -689,8 +689,8 @@ button { color: inherit; }
 
   .playback-stage {
     width: 100%;
-    height: 320px;
-    margin: 0 auto 8px;
+    height: 188px;
+    margin: 0 auto 32px;
     border-radius: 14px;
   }
 
@@ -726,7 +726,7 @@ button { color: inherit; }
   .transport-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
+    gap: 18px;
     width: 100%;
     height: auto;
   }
@@ -763,5 +763,30 @@ button { color: inherit; }
 
   .effect-volume input {
     width: 100%;
+  }
+}
+
+
+/* Stage 6 Mobile focus spacing: use tall portrait space to frame Object Timeline. */
+@media (max-width: 767px) and (min-height: 920px) {
+  .app-shell {
+    padding-top: 18px;
+    padding-bottom: max(60px, env(safe-area-inset-bottom));
+  }
+
+  .sound-source-area {
+    margin-bottom: 30px;
+  }
+
+  .mobile-song-picker {
+    margin-bottom: 170px;
+  }
+
+  .playback-stage {
+    margin-bottom: 140px;
+  }
+
+  .transport-row {
+    gap: 30px;
   }
 }
