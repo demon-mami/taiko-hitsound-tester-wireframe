@@ -47,7 +47,7 @@ It does **not** copy the viewer's old note sizes or visual styling. Hitsound Tes
 - Mobile lane = 80px at the 430px reference width
 - Mobile note / judge inner diameter = 40px
 - Mobile judge outer diameter = 46px
-- Mobile horizontal time scale = 1.15× relative to the previous Stage 6 mapping; judge position itself is unchanged
+- Mobile horizontal time scale uses the same span definition as the reference Viewer/Lab: full Canvas width = 1000ms (`pxPerMs = width / 1000`); judge position itself is unchanged, so visible past/future time is intentionally asymmetric
 - 430×932-class tall portrait layouts spend the surplus vertical space mainly above and below Playback Stage so Object Timeline becomes the visual focal point
 - judge outer/inner ratio = 46/40 on Mobile
 - confirmed post-hit parabolic eject/fade behavior, scaled to the Mobile viewport

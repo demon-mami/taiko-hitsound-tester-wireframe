@@ -44,6 +44,15 @@ test("mobile dedicated layout: native song picker and responsive timeline", asyn
   expect(geometry.overview.y - (geometry.stage.y + geometry.stage.height)).toBeGreaterThanOrEqual(130);
 
   await expect.poll(async () => page.locator("#mobile-object-timeline").evaluate((canvas) => canvas.width), { timeout: 30_000 }).toBeGreaterThan(400);
+
+  const timeScale = await page.locator("#mobile-object-timeline").evaluate((canvas) => ({
+    spanMs: Number(canvas.dataset.timeSpanMs),
+    pxPerMs: Number(canvas.dataset.pxPerMs),
+    cssWidth: canvas.getBoundingClientRect().width,
+  }));
+  expect(timeScale.spanMs).toBe(1000);
+  expect(timeScale.pxPerMs).toBeCloseTo(timeScale.cssWidth / 1000, 5);
+
   await expect(page.locator(".player")).toHaveAttribute("data-safety-ready", "true", { timeout: 30_000 });
 
   // Capture the initial dense fixture before changing songs so the responsive

@@ -29,7 +29,7 @@ const EJECT_PERSPECTIVE = 0.95;
 const OVERVIEW_WIDTH = 1000;
 const OVERVIEW_HEIGHT = 84;
 const MOBILE_TIMELINE_HEIGHT = 136;
-const MOBILE_TIMELINE_X_SCALE = 1.15;
+const MOBILE_TIMELINE_SPAN_MS = 1000;
 const FILE_LABEL_LIMIT = "taiko-normal-hitwhistle.wav".length;
 
 const SLOT_DEFS = [
@@ -667,7 +667,11 @@ function drawMobileObjectTimeline(currentSeconds) {
   const noteDiameter = 40;
   const outerDiameter = 46;
   const judgeX = clamp(width * 0.12, 42, 52);
-  const pxPerMs = ((width - judgeX - 12) / FUTURE_WINDOW_MS) * MOBILE_TIMELINE_X_SCALE;
+  // Match the reference Viewer/Lab definition: the full Canvas width represents 1000ms.
+  // Judge position remains Hitsound Tester-specific, so past/future visible time is asymmetric.
+  const pxPerMs = width / MOBILE_TIMELINE_SPAN_MS;
+  mobileTimelineCanvas.dataset.timeSpanMs = String(MOBILE_TIMELINE_SPAN_MS);
+  mobileTimelineCanvas.dataset.pxPerMs = pxPerMs.toFixed(6);
   const geometry = { laneHeight, laneTop, laneBottom, noteY, noteDiameter, outerDiameter, judgeX, pxPerMs };
 
   context.fillStyle = "#171719";
